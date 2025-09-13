@@ -268,7 +268,7 @@ export interface IAnalysisEngine {
  */
 export interface IRuleEngine {
   /** Execute all applicable rules */
-  executeRules(text: string, language: string): SecurityIssue[];
+  executeRules(text: string, language: string, filePath?: string): SecurityIssue[];
   /** Register a new rule */
   registerRule(rule: DetectionRule): void;
   /** Get rules by category */
@@ -350,6 +350,40 @@ export interface IErrorHandler {
   handleRuleError(error: Error, rule: DetectionRule): void;
   /** Report general errors */
   reportError(error: Error, context: string): void;
+}
+
+// ============================================================================
+// File Context Types
+// ============================================================================
+
+/**
+ * File context information for enhanced whitelist filtering
+ */
+export interface FileContext {
+  /** Whether this is a test file */
+  isTestFile: boolean;
+  /** Whether this is a documentation file */
+  isDocumentationFile: boolean;
+  /** Whether this is an example/demo file */
+  isExampleFile: boolean;
+  /** Whether this is a configuration file */
+  isConfigFile: boolean;
+  /** File path (if available) */
+  filePath?: string;
+  /** File extension */
+  fileExtension?: string;
+}
+
+/**
+ * File type classification
+ */
+export enum FileType {
+  TEST = 'test',
+  DOCUMENTATION = 'documentation',
+  EXAMPLE = 'example',
+  CONFIG = 'config',
+  SOURCE = 'source',
+  UNKNOWN = 'unknown'
 }
 
 // ============================================================================

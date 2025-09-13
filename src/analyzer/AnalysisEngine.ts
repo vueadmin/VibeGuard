@@ -129,7 +129,7 @@ export class AnalysisEngine implements IAnalysisEngine {
       }
 
       // Perform analysis
-      const result = await this.performAnalysisWithProtection(text, language, 'text-input');
+      const result = await this.performAnalysisWithProtection(text, language, undefined);
       
       if (result) {
         this.cacheResult(cacheKey, result.issues);
@@ -208,7 +208,7 @@ export class AnalysisEngine implements IAnalysisEngine {
   private async performAnalysisWithProtection(
     text: string,
     language: string,
-    fileName: string
+    fileName?: string
   ): Promise<AnalysisResult | null> {
     if (!this.ruleEngine) {
       logWarning('Rule engine not available', 'AnalysisEngine');
@@ -217,8 +217,8 @@ export class AnalysisEngine implements IAnalysisEngine {
 
     const operation = async (): Promise<AnalysisResult> => {
       const { result: issues, duration } = await measureExecutionTime(
-        () => Promise.resolve(this.ruleEngine!.executeRules(text, language)),
-        `Rule execution for ${fileName}`
+        () => Promise.resolve(this.ruleEngine!.executeRules(text, language, fileName)),
+        `Rule execution for ${fileName || 'text-input'}`
       );
 
       return {
@@ -236,7 +236,7 @@ export class AnalysisEngine implements IAnalysisEngine {
       return executeWithTimeout(
         operation,
         this.performanceGuard.maxAnalysisTime,
-        `Analysis timeout for ${fileName}`
+        `Analysis timeout for ${fileName || 'text-input'}`
       );
     }
 
