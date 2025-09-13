@@ -135,10 +135,10 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
 
       templateCases.forEach(code => {
         const language = code.includes('f"') || code.includes('.format(') ? 'python' :
-                        code.includes('#{') ? 'ruby' :
-                        code.includes('$"') ? 'csharp' :
-                        'javascript';
-        
+          code.includes('#{') ? 'ruby' :
+            code.includes('$"') ? 'csharp' :
+              'javascript';
+
         const issues = ruleEngine.executeRules(code, language);
         assert.strictEqual(issues.length, 0, `Should ignore template with variable: ${code.substring(0, 50)}...`);
       });
@@ -220,7 +220,7 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
       repeatedKeys.forEach((key, index) => {
         const code = `const apiKey = "${key}";`;
         const issues = ruleEngine.executeRules(code, 'javascript');
-        
+
         if (index === repeatedKeys.length - 1) {
           assert.ok(issues.length > 0, 'Should detect high diversity key');
         } else {
@@ -244,7 +244,7 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
         // Use a realistic key that won't be filtered as placeholder
         const code = 'const apiKey = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
         const issues = ruleEngine.executeRules(code, 'javascript', filePath);
-        
+
         assert.strictEqual(issues.length, 1, `Should detect issue in test file: ${filePath}`);
         assert.strictEqual(issues[0].severity, IssueSeverity.WARNING, 'Should reduce severity to WARNING');
         assert.ok(issues[0].message.includes('测试文件中发现问题'), 'Should indicate test file context');
@@ -267,12 +267,12 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
 
     test('should be very lenient with documentation files', () => {
       const docFilePaths = ['README.md', 'docs/api.md', 'swagger.yaml'];
-      
+
       docFilePaths.forEach(filePath => {
         // Use a realistic key that won't be filtered as placeholder
         const code = 'const apiKey = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
         const issues = ruleEngine.executeRules(code, 'javascript', filePath);
-        
+
         assert.strictEqual(issues.length, 1, `Should detect issue in doc file: ${filePath}`);
         assert.strictEqual(issues[0].severity, IssueSeverity.INFO, 'Should reduce severity to INFO');
         assert.ok(issues[0].message.includes('文档文件中发现问题'), 'Should indicate doc file context');
@@ -320,7 +320,7 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
 
     test('should handle template values in config files', () => {
       const configFilePaths = ['package.json', '.env.example', 'docker-compose.yml'];
-      
+
       const templateCodes = [
         'const key = "${API_KEY}";',
         'const key = "{{API_KEY}}";',
@@ -353,9 +353,9 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
         const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321"; // This should be detected
         const placeholderKey = "your-api-key-here";
       `;
-      
+
       const issues = ruleEngine.executeRules(code, 'javascript');
-      
+
       // Should only detect the real key
       assert.strictEqual(issues.length, 1, 'Should detect only the real key');
       assert.strictEqual(issues[0].location.line, 4, 'Should detect on the correct line');
@@ -368,7 +368,7 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
           WHERE created_at < '2023-01-01'
         \`;
       `;
-      
+
       const issues = ruleEngine.executeRules(code, 'javascript');
       assert.strictEqual(issues.length, 0, 'Template string with WHERE clause should be safe');
     });
@@ -395,7 +395,7 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
 
       languageTests.forEach(test => {
         const issues = ruleEngine.executeRules(test.code, test.language);
-        
+
         if (test.shouldDetect) {
           assert.ok(issues.length > 0, `Should detect fallback key in ${test.language}`);
         } else {
@@ -411,7 +411,7 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
         'javascript',
         'src/test/api.test.js'
       );
-      
+
       assert.strictEqual(testFileIssues.length, 1, 'Should detect issue in test file');
       assert.ok(testFileIssues[0].metadata.confidence < 0.9, 'Should have lower confidence in test file');
       assert.ok(testFileIssues[0].metadata.tags.includes('test-file'), 'Should include test-file tag');
@@ -422,7 +422,7 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
         'javascript',
         'README.md'
       );
-      
+
       assert.strictEqual(docFileIssues.length, 1, 'Should detect issue in doc file');
       assert.ok(docFileIssues[0].metadata.confidence < 0.5, 'Should have much lower confidence in doc file');
       assert.ok(docFileIssues[0].metadata.tags.includes('documentation'), 'Should include documentation tag');
@@ -433,19 +433,19 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
     test('should handle very long files efficiently', () => {
       const longCode = Array(1000).fill('const validVar = process.env.API_KEY;').join('\n');
       const startTime = Date.now();
-      
+
       const issues = ruleEngine.executeRules(longCode, 'javascript');
       const duration = Date.now() - startTime;
-      
+
       assert.strictEqual(issues.length, 0, 'All should be whitelisted');
       assert.ok(duration < 1000, 'Should complete within 1 second');
     });
 
     test('should handle files with many potential matches', () => {
-      const codeWithManyMatches = Array(100).fill(0).map((_, i) => 
+      const codeWithManyMatches = Array(100).fill(0).map((_, i) =>
         `const key${i} = "sk-example${i.toString().padStart(40, '0')}";`
       ).join('\n');
-      
+
       const issues = ruleEngine.executeRules(codeWithManyMatches, 'javascript');
       assert.strictEqual(issues.length, 0, 'All should be whitelisted as examples');
     });
@@ -465,7 +465,7 @@ const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
 
       const testEngine = new RuleEngine();
       testEngine.registerRule(ruleWithBadWhitelist);
-      
+
       // Should not crash, should handle gracefully
       const issues = testEngine.executeRules('const key = "sk-testtest1234567890abcdef1234567890abcdef12345678";', 'javascript');
       assert.strictEqual(issues.length, 1, 'Should still detect since whitelist failed');
