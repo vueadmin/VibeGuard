@@ -1,7 +1,7 @@
 {
-  "name": "vibeguard-kiro",
-  "displayName": "VibeGuard-KIRO",
-  "description": "",
+  "name": "vibeguard",
+  "displayName": "VibeGuard",
+  "description": "让 AI 编程更安全",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.104.0"
@@ -14,7 +14,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "vibeguard-kiro.helloWorld",
+        "command": "vibeguard.helloWorld",
         "title": "Hello World"
       }
     ]
