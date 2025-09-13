@@ -108,56 +108,75 @@
   - 编写基于真实场景的测试用例
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 7. 实现代码注入检测规则
-- [ ] 7.1 创建代码注入规则定义
+- [ ] 8. 集成所有组件到扩展入口点
+- [ ] 8.1 更新扩展主入口文件
 
-  - 创建 code-injection-rules.ts 规则定义文件
+  - 修改 src/extension.ts，集成诊断管理器和快速修复提供者
+  - 连接 DocumentMonitor、AnalysisEngine、RuleEngine 和 DiagnosticManager
+  - 注册 API 密钥检测规则到规则引擎
+  - 实现完整的实时分析工作流程
+  - 确保扩展激活时所有服务正常启动
+  - _Requirements: 4.1, 4.2, 1.1, 1.2, 1.3, 1.4_
+
+- [ ] 8.2 编写扩展集成测试
+
+  - 创建 src/test/integration/extension-integration.test.ts 测试文件
+  - 测试完整的文档分析工作流程
+  - 测试 API 密钥检测的端到端功能
+  - 测试诊断显示和快速修复的集成
+  - _Requirements: 4.1, 4.2_
+
+- [ ] 9. 实现代码注入检测规则
+- [ ] 9.1 创建代码注入规则定义
+
+  - 创建 src/rules/definitions/code-injection-rules.ts 规则定义文件
   - 实现 eval() 函数检测和安全替代建议
   - 实现 innerHTML 直接赋值检测和 XSS 风险警告
   - 实现 child_process.exec/spawn 命令注入检测
-  - 编写代码注入检测的单元测试
+  - 注册代码注入规则到规则引擎
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 8. 实现框架特定风险检测
-- [ ] 8.1 创建框架风险规则定义
+- [ ] 9.2 编写代码注入检测测试
 
-  - 创建 framework-rules.ts 规则定义文件
+  - 创建 src/test/rules/code-injection-rules.test.ts 测试文件
+  - 测试所有代码注入检测模式
+  - 编写基于真实攻击场景的测试用例
+  - _Requirements: 3.1, 3.2, 3.3_
+
+- [ ] 10. 实现框架特定风险检测
+- [ ] 10.1 创建框架风险规则定义
+
+  - 创建 src/rules/definitions/framework-rules.ts 规则定义文件
   - 实现 React dangerouslySetInnerHTML 检测
   - 实现 Vue v-html 指令风险检测
   - 实现 React useEffect 无限循环检测
-  - 编写框架特定风险检测的单元测试
+  - 注册框架风险规则到规则引擎
   - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 9. 实现配置错误检测
-- [ ] 9.1 创建配置错误规则定义
+- [ ] 10.2 编写框架风险检测测试
 
-  - 创建 config-rules.ts 规则定义文件
+  - 创建 src/test/rules/framework-rules.test.ts 测试文件
+  - 测试 React 和 Vue 特定风险检测
+  - 编写基于真实框架代码的测试用例
+  - _Requirements: 5.1, 5.2, 5.3_
+
+- [ ] 11. 实现配置错误检测
+- [ ] 11.1 创建配置错误规则定义
+
+  - 创建 src/rules/definitions/config-rules.ts 规则定义文件
   - 实现生产环境 debug=true 检测
   - 实现 CORS 配置风险检测（允许所有域名）
   - 实现 Docker 端口暴露风险检测
   - 实现 .env 文件示例值检测
-  - 编写配置错误检测的单元测试
+  - 注册配置错误规则到规则引擎
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 10. 实现误报控制和白名单机制
-- [ ] 10.1 增强白名单过滤功能
+- [ ] 11.2 编写配置错误检测测试
 
-  - 扩展白名单机制，支持环境变量引用检测
-  - 实现注释内容过滤，避免检测注释中的示例代码
-  - 实现模板字符串变量检测，避免误报动态内容
-  - 实现测试文件特殊处理，降低测试代码的警告级别
-  - 编写白名单机制的单元测试
-  - _Requirements: 8.1, 8.2, 8.3, 8.5_
-
-- [ ] 11. 集成所有组件到扩展入口点
-- [ ] 11.1 更新扩展主入口文件
-
-  - 修改 extension.ts，集成所有已实现的核心服务
-  - 注册文档监听器、分析引擎、诊断管理器和快速修复提供者
-  - 实现完整的扩展激活和停用逻辑
-  - 连接所有组件，确保实时分析工作流程正常运行
-  - 编写扩展集成的端到端测试
-  - _Requirements: 4.1, 4.2_
+  - 创建 src/test/rules/config-rules.test.ts 测试文件
+  - 测试所有配置错误检测模式
+  - 编写基于真实配置文件的测试用例
+  - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
 - [ ] 12. 实现性能优化和错误处理
 - [ ] 12.1 添加性能保护机制
