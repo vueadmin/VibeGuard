@@ -3,21 +3,63 @@
   "displayName": "VibeGuard",
   "description": "让 AI 编程更安全",
   "version": "0.0.1",
+  "publisher": "vibeguard",
   "engines": {
     "vscode": "^1.104.0"
   },
   "categories": [
+    "Linters",
     "Other"
   ],
-  "activationEvents": [],
+  "keywords": [
+    "security",
+    "ai",
+    "code-analysis",
+    "api-keys",
+    "sql-injection"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vibeguard.helloWorld",
-        "title": "Hello World"
+        "command": "vibeguard.analyzeCurrentFile",
+        "title": "分析当前文件",
+        "category": "VibeGuard"
+      },
+      {
+        "command": "vibeguard.analyzeWorkspace",
+        "title": "分析整个工作区",
+        "category": "VibeGuard"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "VibeGuard",
+      "properties": {
+        "vibeguard.enableRealTimeAnalysis": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用实时代码分析"
+        },
+        "vibeguard.debounceDelay": {
+          "type": "number",
+          "default": 500,
+          "description": "分析防抖延迟（毫秒）"
+        },
+        "vibeguard.maxFileSize": {
+          "type": "number",
+          "default": 1048576,
+          "description": "最大分析文件大小（字节）"
+        },
+        "vibeguard.supportedLanguages": {
+          "type": "array",
+          "default": ["javascript", "typescript", "sql", "json", "yaml", "python", "java", "csharp", "php"],
+          "description": "支持分析的编程语言"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
