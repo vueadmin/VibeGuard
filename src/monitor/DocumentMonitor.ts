@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import { IDocumentMonitor, IAnalysisEngine, VibeGuardConfig } from '../types';
+import { IDocumentMonitor, IAnalysisEngine, IDiagnosticManager, VibeGuardConfig } from '../types';
 import { 
   getLanguageFromDocument, 
   isLanguageSupported, 
@@ -39,7 +39,10 @@ export class DocumentMonitor implements IDocumentMonitor {
   private config: VibeGuardConfig;
   private isMonitoring = false;
 
-  constructor(private analysisEngine: IAnalysisEngine) {
+  constructor(
+    private analysisEngine: IAnalysisEngine,
+    private diagnosticManager?: IDiagnosticManager
+  ) {
     this.config = getExtensionConfig();
     
     // Create debounced analysis function
@@ -253,10 +256,17 @@ export class DocumentMonitor implements IDocumentMonitor {
 
       logInfo(`Triggering analysis for: ${document.fileName}`, 'DocumentMonitor');
       
-      // Trigger analysis (fire and forget - errors handled by analysis engine)
-      this.analysisEngine.analyzeDocument(document).catch(error => {
-        logError(error as Error, `Analysis failed for: ${document.fileName}`);
-      });
+      // Perform analysis and get results
+      const issues = await this.analysisEngine.analyzeDocument(document);
+      
+      // Update diagnostics using injected diagnostic manager
+      if (this.diagnosticManager) {
+        this.diagnosticManager.updateDiagnostics(document, issues);
+        logInfo(`Updated diagnostics for ${document.fileName}: ${issues.length} issues`, 'DocumentMonitor');
+      } else {
+        logWarning('Diagnostic manager not available', 'DocumentMonitor');
+      }
+      
     } catch (error) {
       logError(error as Error, `Failed to trigger analysis: ${document.fileName}`);
     }

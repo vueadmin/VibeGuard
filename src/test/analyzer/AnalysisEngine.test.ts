@@ -44,6 +44,20 @@ class MockRuleEngine implements IRuleEngine {
     ];
   }
 
+  getStatistics(): {
+    totalRules: number;
+    enabledRules: number;
+    rulesByCategory: { [category: string]: number };
+    rulesBySeverity: { [severity: string]: number };
+  } {
+    return {
+      totalRules: 1,
+      enabledRules: 1,
+      rulesByCategory: { 'api-key': 1 },
+      rulesBySeverity: { 'error': 1 }
+    };
+  }
+
   reset() {
     this.executeRulesCalled = false;
     this.lastText = '';

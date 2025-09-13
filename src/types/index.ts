@@ -240,6 +240,8 @@ export interface IDocumentMonitor {
   onDocumentChange(event: vscode.TextDocumentChangeEvent): void;
   /** Handle document open events */
   onDocumentOpen(document: vscode.TextDocument): void;
+  /** Dispose of resources */
+  dispose(): void;
 }
 
 /**
@@ -255,6 +257,10 @@ export interface IAnalysisEngine {
     document: vscode.TextDocument, 
     changes: vscode.TextDocumentContentChangeEvent[]
   ): Promise<SecurityIssue[]>;
+  /** Set the rule engine */
+  setRuleEngine(ruleEngine: IRuleEngine): void;
+  /** Dispose of resources */
+  dispose(): void;
 }
 
 /**
@@ -269,6 +275,13 @@ export interface IRuleEngine {
   getRulesByCategory(category: string): DetectionRule[];
   /** Get all enabled rules */
   getEnabledRules(): DetectionRule[];
+  /** Get statistics about registered rules */
+  getStatistics(): {
+    totalRules: number;
+    enabledRules: number;
+    rulesByCategory: { [category: string]: number };
+    rulesBySeverity: { [severity: string]: number };
+  };
 }
 
 /**
@@ -281,6 +294,8 @@ export interface IDiagnosticManager {
   clearDiagnostics(document: vscode.TextDocument): void;
   /** Get the diagnostic collection */
   getDiagnosticCollection(): vscode.DiagnosticCollection;
+  /** Dispose of resources */
+  dispose(): void;
 }
 
 /**

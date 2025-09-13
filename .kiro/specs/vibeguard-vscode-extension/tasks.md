@@ -90,7 +90,7 @@
   - 测试快速修复的用户体验
   - _Requirements: 1.6, 4.4_
 
-- [x] 7. 实现 SQL 危险操作检测
+- [ ] 7. 实现 SQL 危险操作检测
 - [x] 7.1 创建 SQL 规则定义
 
   - 创建 src/rules/definitions/sql-rules.ts 规则定义文件
@@ -108,8 +108,8 @@
   - 编写基于真实场景的测试用例
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 8. 集成所有组件到扩展入口点
-- [ ] 8.1 更新扩展主入口文件
+- [-] 8. 集成所有组件到扩展入口点
+- [-] 8.1 更新扩展主入口文件
 
   - 修改 src/extension.ts，集成诊断管理器和快速修复提供者
   - 连接 DocumentMonitor、AnalysisEngine、RuleEngine 和 DiagnosticManager
@@ -118,7 +118,7 @@
   - 确保扩展激活时所有服务正常启动
   - _Requirements: 4.1, 4.2, 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 8.2 编写扩展集成测试
+- [x] 8.2 编写扩展集成测试
 
   - 创建 src/test/integration/extension-integration.test.ts 测试文件
   - 测试完整的文档分析工作流程

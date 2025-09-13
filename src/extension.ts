@@ -22,7 +22,25 @@ import {
   showInfoMessage, 
   showErrorMessage 
 } from './utils';
-import { VibeGuardConfig } from './types';
+import { 
+  VibeGuardConfig, 
+  IDocumentMonitor, 
+  IAnalysisEngine, 
+  IRuleEngine,
+  IDiagnosticManager,
+  IQuickFixProvider 
+} from './types';
+
+// Import core components
+import { DocumentMonitor } from './monitor/DocumentMonitor';
+import { AnalysisEngine } from './analyzer/AnalysisEngine';
+import { RuleEngine } from './rules/RuleEngine';
+import { DiagnosticManager } from './diagnostics/DiagnosticManager';
+import { QuickFixProvider } from './quickfix/QuickFixProvider';
+
+// Import rule definitions
+import { registerApiKeyRules } from './rules/definitions/api-keys';
+import { registerSqlDangerRules } from './rules/definitions/sql-rules';
 
 /**
  * Extension context and services
@@ -30,11 +48,11 @@ import { VibeGuardConfig } from './types';
 interface ExtensionServices {
   config: VibeGuardConfig;
   diagnosticCollection: vscode.DiagnosticCollection;
-  // Additional services will be added in subsequent tasks:
-  // documentMonitor?: IDocumentMonitor;
-  // analysisEngine?: IAnalysisEngine;
-  // diagnosticManager?: IDiagnosticManager;
-  // quickFixProvider?: IQuickFixProvider;
+  documentMonitor: IDocumentMonitor;
+  analysisEngine: IAnalysisEngine;
+  ruleEngine: IRuleEngine;
+  diagnosticManager: IDiagnosticManager;
+  quickFixProvider: IQuickFixProvider;
 }
 
 let services: ExtensionServices | null = null;
@@ -49,22 +67,61 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Initialize configuration
     const config = getExtensionConfig();
-    
-    // Create diagnostic collection
-    const diagnosticCollection = vscode.languages.createDiagnosticCollection(DIAGNOSTIC_COLLECTION_NAME);
-    context.subscriptions.push(diagnosticCollection);
 
-    // Initialize services
+    // Initialize core services
+    logInfo('正在初始化核心服务...');
+    
+    // 1. Initialize Rule Engine
+    const ruleEngine = new RuleEngine();
+    
+    // 2. Initialize Analysis Engine
+    const analysisEngine = new AnalysisEngine();
+    analysisEngine.setRuleEngine(ruleEngine);
+    
+    // 3. Initialize Diagnostic Manager
+    const diagnosticManager = new DiagnosticManager({
+      collectionName: DIAGNOSTIC_COLLECTION_NAME,
+      maxDiagnosticsPerFile: 50,
+      groupSimilarIssues: true
+    });
+    
+    // Get diagnostic collection from manager and register it
+    const diagnosticCollection = diagnosticManager.getDiagnosticCollection();
+    context.subscriptions.push(diagnosticCollection);
+    
+    // 4. Initialize Quick Fix Provider
+    const quickFixProvider = new QuickFixProvider(diagnosticCollection);
+    
+    // 5. Initialize Document Monitor with diagnostic manager
+    const documentMonitor = new DocumentMonitor(analysisEngine, diagnosticManager);
+
+    // Connect Analysis Engine to Diagnostic Manager
+    connectAnalysisEngineToServices(analysisEngine, diagnosticManager);
+
+    // Initialize services object
     services = {
       config,
-      diagnosticCollection
+      diagnosticCollection,
+      documentMonitor,
+      analysisEngine,
+      ruleEngine,
+      diagnosticManager,
+      quickFixProvider
     };
 
-    // Register commands
-    registerCommands(context);
+    // Register all detection rules
+    await registerDetectionRules(ruleEngine);
 
-    // Register configuration change listener
+    // Register VSCode providers and commands
+    registerVSCodeProviders(context, quickFixProvider);
+    registerCommands(context);
     registerConfigurationChangeListener(context);
+
+    // Start real-time monitoring
+    if (config.enableRealTimeAnalysis) {
+      documentMonitor.startMonitoring();
+      logInfo('实时文档监控已启动');
+    }
 
     // Show activation message
     logInfo(SUCCESS_MESSAGES.EXTENSION_ACTIVATED);
@@ -72,9 +129,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Only show user message if this is the first activation
     const isFirstActivation = context.globalState.get('vibeguard.firstActivation', true);
     if (isFirstActivation) {
-      showInfoMessage('已激活！正在保护您的代码安全 🛡️');
+      showInfoMessage('VibeGuard 已激活！正在保护您的代码安全 🛡️');
       await context.globalState.update('vibeguard.firstActivation', false);
     }
+
+    logInfo(`VibeGuard 扩展激活完成 - 已注册 ${ruleEngine.getEnabledRules().length} 个检测规则`);
 
   } catch (error) {
     logError(error as Error, '扩展激活失败');
@@ -93,7 +152,27 @@ export function deactivate(): void {
     
     // Clean up services
     if (services) {
-      services.diagnosticCollection.dispose();
+      // Stop document monitoring
+      if (services.documentMonitor) {
+        services.documentMonitor.stopMonitoring();
+        services.documentMonitor.dispose();
+      }
+      
+      // Dispose analysis engine
+      if (services.analysisEngine) {
+        services.analysisEngine.dispose();
+      }
+      
+      // Dispose diagnostic manager
+      if (services.diagnosticManager) {
+        services.diagnosticManager.dispose();
+      }
+      
+      // Dispose diagnostic collection
+      if (services.diagnosticCollection) {
+        services.diagnosticCollection.dispose();
+      }
+      
       services = null;
     }
     
@@ -118,9 +197,29 @@ function registerCommands(context: vscode.ExtensionContext): void {
           return;
         }
 
-        // TODO: Implement analysis logic in subsequent tasks
-        showInfoMessage('分析功能将在后续任务中实现');
-        logInfo(`分析文件: ${activeEditor.document.fileName}`);
+        if (!services?.analysisEngine) {
+          showErrorMessage('分析引擎未初始化');
+          return;
+        }
+
+        showInfoMessage('正在分析当前文件...');
+        logInfo(`开始分析文件: ${activeEditor.document.fileName}`);
+        
+        // Perform analysis
+        const issues = await services.analysisEngine.analyzeDocument(activeEditor.document);
+        
+        // Update diagnostics
+        if (services.diagnosticManager) {
+          services.diagnosticManager.updateDiagnostics(activeEditor.document, issues);
+        }
+        
+        // Show results
+        const message = issues.length > 0 
+          ? `发现 ${issues.length} 个安全问题` 
+          : '未发现安全问题 ✅';
+        showInfoMessage(message);
+        
+        logInfo(`分析完成: ${activeEditor.document.fileName} - ${issues.length} 个问题`);
         
       } catch (error) {
         logError(error as Error, '分析当前文件失败');
@@ -139,9 +238,39 @@ function registerCommands(context: vscode.ExtensionContext): void {
           return;
         }
 
-        // TODO: Implement workspace analysis in subsequent tasks
-        showInfoMessage('工作区分析功能将在后续任务中实现');
+        if (!services?.analysisEngine) {
+          showErrorMessage('分析引擎未初始化');
+          return;
+        }
+
+        showInfoMessage('正在分析工作区文件...');
         logInfo('开始分析工作区');
+        
+        // Get all open text documents
+        const documents = vscode.workspace.textDocuments;
+        let totalIssues = 0;
+        let analyzedFiles = 0;
+        
+        for (const document of documents) {
+          if (!document.isUntitled && services.documentMonitor) {
+            try {
+              const issues = await services.analysisEngine.analyzeDocument(document);
+              
+              if (services.diagnosticManager) {
+                services.diagnosticManager.updateDiagnostics(document, issues);
+              }
+              
+              totalIssues += issues.length;
+              analyzedFiles++;
+            } catch (error) {
+              logError(error as Error, `分析文件失败: ${document.fileName}`);
+            }
+          }
+        }
+        
+        const message = `工作区分析完成：分析了 ${analyzedFiles} 个文件，发现 ${totalIssues} 个安全问题`;
+        showInfoMessage(message);
+        logInfo(message);
         
       } catch (error) {
         logError(error as Error, '分析工作区失败');
@@ -176,6 +305,71 @@ function registerConfigurationChangeListener(context: vscode.ExtensionContext): 
   });
 
   context.subscriptions.push(configChangeListener);
+}
+
+/**
+ * Register all detection rules with the rule engine
+ */
+async function registerDetectionRules(ruleEngine: IRuleEngine): Promise<void> {
+  try {
+    logInfo('正在注册检测规则...');
+    
+    // Register API key detection rules (highest priority)
+    registerApiKeyRules(ruleEngine);
+    
+    // Register SQL danger detection rules
+    registerSqlDangerRules(ruleEngine);
+    
+    const stats = ruleEngine.getStatistics();
+    logInfo(`规则注册完成 - 总计: ${stats.totalRules}, 已启用: ${stats.enabledRules}`);
+    
+  } catch (error) {
+    logError(error as Error, '注册检测规则失败');
+    throw error;
+  }
+}
+
+/**
+ * Connect analysis engine to diagnostic services
+ */
+function connectAnalysisEngineToServices(
+  analysisEngine: IAnalysisEngine,
+  diagnosticManager: IDiagnosticManager
+): void {
+  // The analysis engine will be used by document monitor
+  // and the diagnostic manager will be called to update diagnostics
+  // This connection is handled through the document monitor workflow
+  logInfo('分析引擎已连接到诊断服务');
+}
+
+/**
+ * Register VSCode providers
+ */
+function registerVSCodeProviders(
+  context: vscode.ExtensionContext,
+  quickFixProvider: IQuickFixProvider
+): void {
+  try {
+    // Register code action provider for quick fixes
+    const codeActionProvider = vscode.languages.registerCodeActionsProvider(
+      { scheme: 'file' }, // Apply to all file schemes
+      quickFixProvider,
+      {
+        providedCodeActionKinds: [
+          vscode.CodeActionKind.QuickFix,
+          vscode.CodeActionKind.Refactor,
+          vscode.CodeActionKind.SourceFixAll
+        ]
+      }
+    );
+    
+    context.subscriptions.push(codeActionProvider);
+    logInfo('代码操作提供者已注册');
+    
+  } catch (error) {
+    logError(error as Error, '注册 VSCode 提供者失败');
+    throw error;
+  }
 }
 
 /**

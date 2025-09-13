@@ -28,6 +28,14 @@ class MockAnalysisEngine implements IAnalysisEngine {
     return [];
   }
 
+  setRuleEngine(ruleEngine: any): void {
+    // Mock implementation
+  }
+
+  dispose(): void {
+    // Mock implementation
+  }
+
   reset() {
     this.analyzeDocumentCalled = false;
     this.analyzeTextCalled = false;
