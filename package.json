@@ -1,122 +1,87 @@
 {
   "name": "vibeguard",
-  "displayName": "VibeGuard - AI 编程安全卫士",
-  "description": "🛡️ 专为 AI 编程用户设计的安全检测工具 - 防止你的代码值 $5000！实时检测 API 密钥泄露、SQL 注入、XSS 攻击等危险代码，一键修复安全问题。",
-  "version": "0.0.1",
-  "publisher": "vibeguard",
+  "displayName": "VibeGuard - 代码安全卫士",
+  "description": "实时检测代码中的致命错误，防止你删库跑路、泄露密钥、生产事故",
+  "version": "1.0.0",
   "engines": {
-    "vscode": "^1.104.0"
+    "vscode": "^1.84.0"
   },
-  "categories": [
-    "Linters",
-    "Other"
-  ],
-  "keywords": [
-    "security",
-    "ai",
-    "code-analysis",
-    "api-keys",
-    "sql-injection",
-    "xss",
-    "安全",
-    "AI编程",
-    "代码检测",
-    "密钥保护",
-    "chatgpt",
-    "claude",
-    "copilot"
-  ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "main": "./out/extension.js",
+  "categories": ["Linters", "Other"],
+  "keywords": ["security", "linter", "safety", "SQL", "XSS", "injection"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vibeguard.analyzeCurrentFile",
-        "title": "🔍 检查当前文件的安全问题",
-        "category": "VibeGuard"
+        "command": "vibeguard.scanWorkspace",
+        "title": "VibeGuard: 扫描整个工作区"
       },
       {
-        "command": "vibeguard.analyzeWorkspace",
-        "title": "🛡️ 扫描整个项目的安全风险",
-        "category": "VibeGuard"
-      },
-      {
-        "command": "vibeguard.fixAllIssues",
-        "title": "🚀 一键修复所有安全问题",
-        "category": "VibeGuard"
-      },
-      {
-        "command": "vibeguard.showSecurityReport",
-        "title": "📊 查看安全检测报告",
-        "category": "VibeGuard"
-      },
-      {
-        "command": "vibeguard.learnSecurity",
-        "title": "📚 学习安全编程知识",
-        "category": "VibeGuard"
+        "command": "vibeguard.toggleEnable",
+        "title": "VibeGuard: 启用/禁用插件"
       }
     ],
     "configuration": {
-      "title": "VibeGuard - AI 编程安全设置",
+      "title": "VibeGuard",
       "properties": {
-        "vibeguard.enableRealTimeAnalysis": {
+        "vibeguard.enable": {
           "type": "boolean",
           "default": true,
-          "description": "🔍 启用实时安全检测 - 在你输入代码时立即发现安全问题"
+          "description": "启用 VibeGuard 代码检查"
+        },
+        "vibeguard.severityLevels": {
+          "type": "object",
+          "default": {
+            "error": true,
+            "warning": true,
+            "info": false
+          },
+          "description": "设置显示的问题严重级别"
+        },
+        "vibeguard.excludedFolders": {
+          "type": "array",
+          "default": ["node_modules", ".git", "dist", "build"],
+          "description": "排除的文件夹"
+        },
+        "vibeguard.maxFileSize": {
+          "type": "number",
+          "default": 500000,
+          "description": "最大分析文件大小（字节）"
         },
         "vibeguard.debounceDelay": {
           "type": "number",
           "default": 500,
-          "description": "⏱️ 检测延迟时间（毫秒）- 避免输入时频繁检测，推荐 500ms"
-        },
-        "vibeguard.maxFileSize": {
-          "type": "number",
-          "default": 1048576,
-          "description": "📁 最大检测文件大小（字节）- 超过此大小的文件将跳过检测，默认 1MB"
-        },
-        "vibeguard.supportedLanguages": {
-          "type": "array",
-          "default": ["javascript", "typescript", "sql", "json", "yaml", "python", "java", "csharp", "php"],
-          "description": "🌐 支持检测的编程语言 - 可以添加或移除特定语言"
-        },
-        "vibeguard.showRealCases": {
-          "type": "boolean",
-          "default": true,
-          "description": "📚 在错误提示中显示真实案例 - 帮助理解安全问题的严重性"
-        },
-        "vibeguard.autoFixOnSave": {
-          "type": "boolean",
-          "default": false,
-          "description": "🚀 保存时自动修复安全问题 - 谨慎使用，建议先手动确认"
-        },
-        "vibeguard.notificationLevel": {
-          "type": "string",
-          "enum": ["all", "errors-only", "silent"],
-          "default": "all",
-          "description": "🔔 通知级别 - 选择接收哪些类型的安全提醒"
+          "description": "输入防抖延迟（毫秒）"
         }
       }
     }
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test"
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
-    "@types/vscode": "^1.104.0",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "@typescript-eslint/eslint-plugin": "^8.42.0",
-    "@typescript-eslint/parser": "^8.42.0",
-    "eslint": "^9.34.0",
-    "typescript": "^5.9.2",
-    "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
-  }
+    "@types/vscode": "^1.84.0",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vibeguard/vibeguard"
+  },
+  "publisher": "VibeHacks",
+  "license": "MIT",
+  "icon": "resources/icon.png"
 }

@@ -1,828 +1,275 @@
-/**
- * VibeGuard VSCode Extension Entry Point
- * 
- * This extension helps protect non-technical users from security risks
- * when using AI tools to generate code. It provides real-time detection
- * of dangerous patterns like hardcoded API keys, SQL injection risks,
- * and other security vulnerabilities.
- * 
- * Core workflow:
- * 1. DocumentMonitor listens for file changes
- * 2. AnalysisEngine coordinates rule execution
- * 3. RuleEngine executes detection rules
- * 4. DiagnosticManager displays issues in VSCode
- * 5. QuickFixProvider offers one-click fixes
- */
-
 import * as vscode from 'vscode';
-import { 
-  COMMANDS, 
-  SUCCESS_MESSAGES, 
-  ERROR_MESSAGES,
-  DIAGNOSTIC_COLLECTION_NAME 
-} from './constants';
-import { 
-  getExtensionConfig, 
-  logInfo, 
-  logError, 
-  showInfoMessage, 
-  showErrorMessage 
-} from './utils';
-import { 
-  VibeGuardConfig, 
-  IDocumentMonitor, 
-  IAnalysisEngine, 
-  IRuleEngine,
-  IDiagnosticManager,
-  IQuickFixProvider 
-} from './types';
-
-// Import core components
-import { DocumentMonitor } from './monitor/DocumentMonitor';
-import { AnalysisEngine } from './analyzer/AnalysisEngine';
-import { RuleEngine } from './rules/RuleEngine';
+import { CodeAnalyzer } from './analyzer/CodeAnalyzer';
 import { DiagnosticManager } from './diagnostics/DiagnosticManager';
-import { QuickFixProvider } from './quickfix/QuickFixProvider';
+import { RuleEngine } from './rules/RuleEngine';
+import { CacheManager } from './cache/CacheManager';
+import { Settings } from './config/Settings';
+import { QuickFixProvider } from './diagnostics/QuickFixProvider';
+import { debounce } from './utils/debounce';
+import { Logger } from './utils/logger';
 
-// Import rule definitions
-import { registerApiKeyRules } from './rules/definitions/api-keys';
-import { registerSqlDangerRules } from './rules/definitions/sql-rules';
-import { registerCodeInjectionRules } from './rules/definitions/code-injection-rules';
-import { registerFrameworkRiskRules } from './rules/definitions/framework-rules';
-import { registerConfigErrorRules } from './rules/definitions/config-rules';
+let analyzer: CodeAnalyzer;
+let diagnosticManager: DiagnosticManager;
+let settings: Settings;
+let isEnabled = true;
 
-/**
- * Extension context and services
- */
-interface ExtensionServices {
-  config: VibeGuardConfig;
-  diagnosticCollection: vscode.DiagnosticCollection;
-  documentMonitor: IDocumentMonitor;
-  analysisEngine: IAnalysisEngine;
-  ruleEngine: IRuleEngine;
-  diagnosticManager: IDiagnosticManager;
-  quickFixProvider: IQuickFixProvider;
-}
+export function activate(context: vscode.ExtensionContext) {
+    Logger.info('VibeGuard \u6b63\u5728\u542f\u52a8...');
 
-let services: ExtensionServices | null = null;
+    // \u521d\u59cb\u5316\u6838\u5fc3\u7ec4\u4ef6
+    settings = new Settings();
+    const cache = new CacheManager();
+    const ruleEngine = new RuleEngine(settings);
+    analyzer = new CodeAnalyzer(ruleEngine, cache);
+    diagnosticManager = new DiagnosticManager();
 
-/**
- * Extension activation function
- * Called when the extension is activated
- * 
- * Initialization sequence:
- * 1. Initialize Rule Engine and register detection rules
- * 2. Initialize Analysis Engine and connect to Rule Engine
- * 3. Initialize Diagnostic Manager for VSCode integration
- * 4. Initialize Quick Fix Provider for one-click fixes
- * 5. Initialize Document Monitor for real-time analysis
- * 6. Register VSCode providers and commands
- * 7. Start real-time monitoring workflow
- */
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  try {
-    // Prevent duplicate activation
-    if (services) {
-      logInfo('VibeGuard 扩展已经激活');
-      return;
-    }
-    
-    logInfo('正在激活 VibeGuard 扩展...');
+    // \u83b7\u53d6\u914d\u7f6e
+    const config = vscode.workspace.getConfiguration('vibeguard');
+    isEnabled = config.get<boolean>('enable', true);
+    const debounceDelay = config.get<number>('debounceDelay', 500);
 
-    // Initialize configuration
-    const config = getExtensionConfig();
-    logInfo(`配置加载完成 - 实时分析: ${config.enableRealTimeAnalysis}, 防抖延迟: ${config.debounceDelay}ms`);
-
-    // Initialize core services in proper order
-    logInfo('正在初始化核心服务...');
-    
-    // 1. Initialize Rule Engine first (foundation for all analysis)
-    const ruleEngine = new RuleEngine();
-    logInfo('规则引擎初始化完成');
-    
-    // 2. Initialize Analysis Engine and connect to Rule Engine
-    const analysisEngine = new AnalysisEngine();
-    analysisEngine.setRuleEngine(ruleEngine);
-    logInfo('分析引擎初始化完成并连接到规则引擎');
-    
-    // 3. Initialize Diagnostic Manager for VSCode integration
-    const diagnosticManager = new DiagnosticManager({
-      collectionName: DIAGNOSTIC_COLLECTION_NAME,
-      maxDiagnosticsPerFile: 50,
-      groupSimilarIssues: true
-    });
-    
-    // Get diagnostic collection from manager and register it with VSCode
-    const diagnosticCollection = diagnosticManager.getDiagnosticCollection();
-    context.subscriptions.push(diagnosticCollection);
-    logInfo('诊断管理器初始化完成并注册到 VSCode');
-    
-    // 4. Initialize Quick Fix Provider for one-click fixes
-    const quickFixProvider = new QuickFixProvider(diagnosticCollection);
-    logInfo('快速修复提供者初始化完成');
-    
-    // 5. Initialize Document Monitor with complete workflow
-    const documentMonitor = new DocumentMonitor(analysisEngine, diagnosticManager);
-    logInfo('文档监控器初始化完成');
-
-    // Initialize services object for global access
-    services = {
-      config,
-      diagnosticCollection,
-      documentMonitor,
-      analysisEngine,
-      ruleEngine,
-      diagnosticManager,
-      quickFixProvider
-    };
-
-    // Register all detection rules (API keys have highest priority)
-    await registerDetectionRules(ruleEngine);
-
-    // Verify all components are properly integrated
-    verifyComponentIntegration();
-
-    // Register VSCode providers and commands
-    registerVSCodeProviders(context, quickFixProvider);
-    registerCommands(context);
-    registerConfigurationChangeListener(context);
-
-    // Start real-time monitoring workflow
-    if (config.enableRealTimeAnalysis) {
-      documentMonitor.startMonitoring();
-      logInfo('实时文档监控已启动 - 开始保护代码安全');
-    } else {
-      logInfo('实时分析已禁用 - 可通过命令手动分析');
-    }
-
-    // Show activation success
-    logInfo(SUCCESS_MESSAGES.EXTENSION_ACTIVATED);
-    
-    // Show user-friendly activation message (only on first activation)
-    const isFirstActivation = context.globalState.get('vibeguard.firstActivation', true);
-    if (isFirstActivation) {
-      showInfoMessage('VibeGuard 已激活！正在保护您的代码安全 🛡️');
-      await context.globalState.update('vibeguard.firstActivation', false);
-    }
-
-    // Log final activation summary
-    const ruleStats = ruleEngine.getStatistics();
-    logInfo(`VibeGuard 扩展激活完成 - 已注册 ${ruleStats.enabledRules} 个检测规则 (总计 ${ruleStats.totalRules} 个)`);
-    logInfo(`规则分布: ${Object.entries(ruleStats.rulesByCategory).map(([cat, count]) => `${cat}: ${count}`).join(', ')}`);
-
-  } catch (error) {
-    logError(error as Error, '扩展激活失败');
-    showErrorMessage(ERROR_MESSAGES.EXTENSION_ACTIVATION_FAILED);
-    throw error;
-  }
-}
-
-/**
- * Extension deactivation function
- * Called when the extension is deactivated
- * Ensures proper cleanup of all services and resources
- */
-export function deactivate(): void {
-  try {
-    logInfo('正在停用 VibeGuard 扩展...');
-    
-    // Clean up services in reverse order of initialization
-    if (services) {
-      // 1. Stop document monitoring first
-      if (services.documentMonitor) {
-        logInfo('停止文档监控...');
-        services.documentMonitor.stopMonitoring();
-        services.documentMonitor.dispose();
-      }
-      
-      // 2. Clear diagnostics (clear all by clearing each document)
-      if (services.diagnosticManager) {
-        logInfo('清理诊断信息...');
-        // Clear diagnostics for all open documents
-        vscode.workspace.textDocuments.forEach(doc => {
-          services!.diagnosticManager.clearDiagnostics(doc);
-        });
-        services.diagnosticManager.dispose();
-      }
-      
-      // 3. Dispose diagnostic collection
-      if (services.diagnosticCollection) {
-        services.diagnosticCollection.dispose();
-      }
-      
-      // 4. Dispose analysis engine
-      if (services.analysisEngine) {
-        logInfo('清理分析引擎...');
-        services.analysisEngine.dispose();
-      }
-      
-      // 5. Clear rule engine (no explicit dispose method, but log for completeness)
-      if (services.ruleEngine) {
-        const stats = services.ruleEngine.getStatistics();
-        logInfo(`规则引擎清理完成 - 已清理 ${stats.totalRules} 个规则`);
-      }
-      
-      // 6. Clear services reference
-      services = null;
-    }
-    
-    logInfo('VibeGuard 扩展已完全停用 - 所有资源已清理');
-  } catch (error) {
-    logError(error as Error, '扩展停用时发生错误');
-  }
-}
-
-/**
- * Register extension commands for manual analysis and control
- */
-function registerCommands(context: vscode.ExtensionContext): void {
-  try {
-    // Analyze current file command - triggers the complete analysis workflow
-    const analyzeCurrentFileCommand = vscode.commands.registerCommand(
-      COMMANDS.ANALYZE_CURRENT_FILE,
-      async () => {
-      try {
-        const activeEditor = vscode.window.activeTextEditor;
-        if (!activeEditor) {
-          showInfoMessage('请先打开一个文件');
-          return;
-        }
-
-        if (!services?.analysisEngine || !services?.diagnosticManager) {
-          showErrorMessage('分析服务未初始化');
-          return;
-        }
-
-        showInfoMessage('正在分析当前文件...');
-        logInfo(`手动分析开始: ${activeEditor.document.fileName}`);
-        
-        // Perform complete analysis using the integrated workflow
-        const issues = await services.analysisEngine.analyzeDocument(activeEditor.document);
-        
-        // Update diagnostics through the diagnostic manager
-        services.diagnosticManager.updateDiagnostics(activeEditor.document, issues);
-        
-        // Show user-friendly results
-        const message = issues.length > 0 
-          ? `发现 ${issues.length} 个安全问题 - 请查看编辑器中的红色波浪线` 
-          : '未发现安全问题 ✅ 代码看起来很安全！';
-        showInfoMessage(message);
-        
-        // Log detailed results for debugging
-        if (issues.length > 0) {
-          const issuesByCategory = issues.reduce((acc, issue) => {
-            acc[issue.category] = (acc[issue.category] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>);
-          
-          logInfo(`分析完成: ${activeEditor.document.fileName} - ${issues.length} 个问题`);
-          logInfo(`问题分布: ${Object.entries(issuesByCategory).map(([cat, count]) => `${cat}: ${count}`).join(', ')}`);
-        } else {
-          logInfo(`分析完成: ${activeEditor.document.fileName} - 无安全问题`);
-        }
-        
-      } catch (error) {
-        logError(error as Error, '分析当前文件失败');
-        showErrorMessage('分析文件时发生错误，请查看开发者控制台了解详情');
-      }
-    }
-  );
-
-  // Analyze workspace command - analyzes all open documents
-  const analyzeWorkspaceCommand = vscode.commands.registerCommand(
-    COMMANDS.ANALYZE_WORKSPACE,
-    async () => {
-      try {
-        if (!vscode.workspace.workspaceFolders) {
-          showInfoMessage('请先打开一个工作区');
-          return;
-        }
-
-        if (!services?.analysisEngine || !services?.diagnosticManager) {
-          showErrorMessage('分析服务未初始化');
-          return;
-        }
-
-        showInfoMessage('正在分析工作区文件...');
-        logInfo('工作区批量分析开始');
-        
-        // Get all open text documents
-        const documents = vscode.workspace.textDocuments;
-        let totalIssues = 0;
-        let analyzedFiles = 0;
-        const issuesByCategory: Record<string, number> = {};
-        
-        // Analyze each document using the integrated workflow
-        for (const document of documents) {
-          if (!document.isUntitled) {
+    // \u6ce8\u518c\u6587\u6863\u53d8\u66f4\u76d1\u542c
+    const documentChangeListener = vscode.workspace.onDidChangeTextDocument(
+        debounce(async (event) => {
+            if (!isEnabled || !shouldAnalyze(event.document)) {
+                return;
+            }
             try {
-              logInfo(`分析文件: ${document.fileName}`);
-              const issues = await services.analysisEngine.analyzeDocument(document);
-              
-              // Update diagnostics for each file
-              services.diagnosticManager.updateDiagnostics(document, issues);
-              
-              // Collect statistics
-              totalIssues += issues.length;
-              analyzedFiles++;
-              
-              // Track issues by category
-              issues.forEach(issue => {
-                issuesByCategory[issue.category] = (issuesByCategory[issue.category] || 0) + 1;
-              });
-              
+                const issues = await analyzer.analyzeIncremental(event);
+                diagnosticManager.updateDiagnostics(event.document, issues);
             } catch (error) {
-              logError(error as Error, `分析文件失败: ${document.fileName}`);
+                Logger.error('\u589e\u91cf\u5206\u6790\u5931\u8d25', error);
             }
-          }
-        }
-        
-        // Show comprehensive results
-        const message = totalIssues > 0
-          ? `工作区分析完成：分析了 ${analyzedFiles} 个文件，发现 ${totalIssues} 个安全问题`
-          : `工作区分析完成：分析了 ${analyzedFiles} 个文件，未发现安全问题 ✅`;
-        
-        showInfoMessage(message);
-        
-        // Log detailed statistics
-        logInfo(`工作区分析完成 - 文件: ${analyzedFiles}, 问题: ${totalIssues}`);
-        if (Object.keys(issuesByCategory).length > 0) {
-          logInfo(`问题分布: ${Object.entries(issuesByCategory).map(([cat, count]) => `${cat}: ${count}`).join(', ')}`);
-        }
-        
-      } catch (error) {
-        logError(error as Error, '分析工作区失败');
-        showErrorMessage('分析工作区时发生错误，请查看开发者控制台了解详情');
-      }
-    }
-  );
-
-  // Fix all issues command - applies all available quick fixes
-  const fixAllIssuesCommand = vscode.commands.registerCommand(
-    'vibeguard.fixAllIssues',
-    async () => {
-      try {
-        const activeEditor = vscode.window.activeTextEditor;
-        if (!activeEditor) {
-          showInfoMessage('请先打开一个文件');
-          return;
-        }
-
-        if (!services?.diagnosticCollection || !services?.quickFixProvider) {
-          showErrorMessage('修复服务未初始化');
-          return;
-        }
-
-        // Get all diagnostics for the current document
-        const diagnostics = services.diagnosticCollection.get(activeEditor.document.uri);
-        if (!diagnostics || diagnostics.length === 0) {
-          showInfoMessage('当前文件没有发现安全问题 ✅');
-          return;
-        }
-
-        const vibeguardDiagnostics = diagnostics.filter(d => d.source === 'VibeGuard');
-        if (vibeguardDiagnostics.length === 0) {
-          showInfoMessage('当前文件没有 VibeGuard 检测到的问题');
-          return;
-        }
-
-        // Show confirmation dialog
-        const choice = await vscode.window.showWarningMessage(
-          `发现 ${vibeguardDiagnostics.length} 个安全问题，是否一键修复？`,
-          { modal: true },
-          '🚀 立即修复',
-          '📋 查看详情',
-          '❌ 取消'
-        );
-
-        if (choice === '🚀 立即修复') {
-          showInfoMessage('正在修复所有安全问题...');
-          
-          // Create a context for code actions
-          const context: vscode.CodeActionContext = {
-            diagnostics: vibeguardDiagnostics,
-            only: [vscode.CodeActionKind.SourceFixAll],
-            triggerKind: vscode.CodeActionTriggerKind.Invoke
-          };
-
-          // Get fix all action
-          const actions = await services.quickFixProvider.provideCodeActions(
-            activeEditor.document,
-            new vscode.Range(0, 0, activeEditor.document.lineCount, 0),
-            context,
-            new vscode.CancellationTokenSource().token
-          );
-
-          const fixAllAction = actions?.find(action => 
-            action.kind?.contains(vscode.CodeActionKind.SourceFixAll)
-          );
-
-          if (fixAllAction && fixAllAction.edit) {
-            await vscode.workspace.applyEdit(fixAllAction.edit);
-            showInfoMessage(`✅ 成功修复 ${vibeguardDiagnostics.length} 个安全问题！`);
-            logInfo(`批量修复完成 - 修复了 ${vibeguardDiagnostics.length} 个问题`);
-          } else {
-            showInfoMessage('部分问题需要手动修复，请点击代码中的灯泡图标');
-          }
-        } else if (choice === '📋 查看详情') {
-          // Show problems panel
-          vscode.commands.executeCommand('workbench.panel.markers.view.focus');
-        }
-
-      } catch (error) {
-        logError(error as Error, '批量修复失败');
-        showErrorMessage('修复过程中发生错误，请手动修复或查看开发者控制台');
-      }
-    }
-  );
-
-  // Show security report command
-  const showSecurityReportCommand = vscode.commands.registerCommand(
-    'vibeguard.showSecurityReport',
-    async () => {
-      try {
-        if (!services?.diagnosticCollection) {
-          showErrorMessage('报告服务未初始化');
-          return;
-        }
-
-        // Collect all diagnostics from all documents
-        let totalIssues = 0;
-        const issuesByCategory: Record<string, number> = {};
-        const issuesBySeverity: Record<string, number> = {};
-        const fileStats: Array<{ file: string; issues: number }> = [];
-
-        // Iterate through all documents with diagnostics
-        services.diagnosticCollection.forEach((uri, diagnostics) => {
-          const vibeguardDiagnostics = diagnostics.filter(d => d.source === 'VibeGuard');
-          if (vibeguardDiagnostics.length > 0) {
-            totalIssues += vibeguardDiagnostics.length;
-            fileStats.push({
-              file: vscode.workspace.asRelativePath(uri),
-              issues: vibeguardDiagnostics.length
-            });
-
-            // Categorize issues
-            vibeguardDiagnostics.forEach(diagnostic => {
-              const code = diagnostic.code?.toString() || 'unknown';
-              const category = code.split('_')[0];
-              issuesByCategory[category] = (issuesByCategory[category] || 0) + 1;
-
-              const severity = diagnostic.severity === vscode.DiagnosticSeverity.Error ? 'error' : 'warning';
-              issuesBySeverity[severity] = (issuesBySeverity[severity] || 0) + 1;
-            });
-          }
-        });
-
-        // Generate report content
-        const reportLines = [
-          '# VibeGuard 安全检测报告 🛡️',
-          '',
-          `**生成时间**: ${new Date().toLocaleString('zh-CN')}`,
-          '',
-          '## 📊 总体统计',
-          '',
-          `- **总问题数**: ${totalIssues}`,
-          `- **受影响文件**: ${fileStats.length}`,
-          `- **错误级别**: ${issuesBySeverity.error || 0}`,
-          `- **警告级别**: ${issuesBySeverity.warning || 0}`,
-          '',
-          '## 🏷️ 问题分类',
-          ''
-        ];
-
-        // Add category breakdown
-        Object.entries(issuesByCategory).forEach(([category, count]) => {
-          const categoryNames: Record<string, string> = {
-            'API': '🔑 API 密钥安全',
-            'SQL': '💾 SQL 危险操作',
-            'CODE': '💻 代码注入风险',
-            'FRAMEWORK': '⚛️ 框架特定风险',
-            'CONFIG': '⚙️ 配置错误'
-          };
-          const categoryName = categoryNames[category] || category;
-          reportLines.push(`- **${categoryName}**: ${count} 个问题`);
-        });
-
-        reportLines.push('', '## 📁 文件详情', '');
-
-        // Add file breakdown
-        fileStats
-          .sort((a, b) => b.issues - a.issues)
-          .forEach(stat => {
-            reportLines.push(`- \`${stat.file}\`: ${stat.issues} 个问题`);
-          });
-
-        if (totalIssues === 0) {
-          reportLines.push('', '🎉 **恭喜！没有发现安全问题，代码很安全！**');
-        } else {
-          reportLines.push(
-            '',
-            '## 🚀 建议操作',
-            '',
-            '1. 点击代码中的 💡 灯泡图标查看具体修复建议',
-            '2. 使用 `Ctrl+Shift+P` → "VibeGuard: 一键修复所有安全问题"',
-            '3. 查看 [安全最佳实践](https://vibeguard.dev/docs) 了解更多',
-            '',
-            '---',
-            '',
-            '💡 **提示**: 定期运行安全检测，保护代码免受安全威胁！'
-          );
-        }
-
-        // Create and show report document
-        const reportContent = reportLines.join('\n');
-        const doc = await vscode.workspace.openTextDocument({
-          content: reportContent,
-          language: 'markdown'
-        });
-
-        await vscode.window.showTextDocument(doc, {
-          preview: true,
-          viewColumn: vscode.ViewColumn.Beside
-        });
-
-        logInfo(`安全报告已生成 - 总问题: ${totalIssues}, 文件: ${fileStats.length}`);
-
-      } catch (error) {
-        logError(error as Error, '生成安全报告失败');
-        showErrorMessage('生成报告时发生错误，请查看开发者控制台了解详情');
-      }
-    }
-  );
-
-  // Learn security command
-  const learnSecurityCommand = vscode.commands.registerCommand(
-    'vibeguard.learnSecurity',
-    async () => {
-      try {
-        const choice = await vscode.window.showInformationMessage(
-          '选择学习内容：',
-          '📚 用户指南',
-          '🏆 最佳实践',
-          '🌐 在线文档',
-          '💬 社区讨论'
-        );
-
-        switch (choice) {
-          case '📚 用户指南':
-            // Open user guide
-            const userGuideUri = vscode.Uri.joinPath(
-              vscode.extensions.getExtension('vibeguard.vibeguard')?.extensionUri || vscode.Uri.file(''),
-              'docs',
-              'USER_GUIDE.md'
-            );
-            try {
-              const doc = await vscode.workspace.openTextDocument(userGuideUri);
-              await vscode.window.showTextDocument(doc);
-            } catch {
-              vscode.env.openExternal(vscode.Uri.parse('https://vibeguard.dev/docs/user-guide'));
-            }
-            break;
-
-          case '🏆 最佳实践':
-            // Open best practices
-            const bestPracticesUri = vscode.Uri.joinPath(
-              vscode.extensions.getExtension('vibeguard.vibeguard')?.extensionUri || vscode.Uri.file(''),
-              'docs',
-              'BEST_PRACTICES.md'
-            );
-            try {
-              const doc = await vscode.workspace.openTextDocument(bestPracticesUri);
-              await vscode.window.showTextDocument(doc);
-            } catch {
-              vscode.env.openExternal(vscode.Uri.parse('https://vibeguard.dev/docs/best-practices'));
-            }
-            break;
-
-          case '🌐 在线文档':
-            vscode.env.openExternal(vscode.Uri.parse('https://vibeguard.dev/docs'));
-            break;
-
-          case '💬 社区讨论':
-            vscode.env.openExternal(vscode.Uri.parse('https://discord.gg/vibeguard'));
-            break;
-        }
-
-      } catch (error) {
-        logError(error as Error, '打开学习资源失败');
-        showErrorMessage('打开学习资源时发生错误');
-      }
-    }
-  );
-
-    // Register commands with context
-    context.subscriptions.push(analyzeCurrentFileCommand);
-    context.subscriptions.push(analyzeWorkspaceCommand);
-    context.subscriptions.push(fixAllIssuesCommand);
-    context.subscriptions.push(showSecurityReportCommand);
-    context.subscriptions.push(learnSecurityCommand);
-
-    logInfo('所有命令注册完成');
-  } catch (error) {
-    // Handle command registration errors (e.g., duplicate registration in tests)
-    if (error instanceof Error && error.message.includes('already exists')) {
-      logInfo('命令已存在，跳过注册（可能在测试环境中）');
-    } else {
-      logError(error as Error, '命令注册失败');
-      throw error;
-    }
-  }
-}
-
-/**
- * Register configuration change listener to update all services when settings change
- */
-function registerConfigurationChangeListener(context: vscode.ExtensionContext): void {
-  const configChangeListener = vscode.workspace.onDidChangeConfiguration(event => {
-    if (event.affectsConfiguration('vibeguard')) {
-      try {
-        if (!services) {
-          return;
-        }
-
-        // Update configuration
-        const newConfig = getExtensionConfig();
-        const oldConfig = services.config;
-        services.config = newConfig;
-        
-        logInfo('配置更新检测到');
-        
-        // Handle real-time analysis toggle
-        if (oldConfig.enableRealTimeAnalysis !== newConfig.enableRealTimeAnalysis) {
-          if (newConfig.enableRealTimeAnalysis) {
-            services.documentMonitor.startMonitoring();
-            logInfo('实时分析已启用');
-            showInfoMessage('实时代码分析已启用');
-          } else {
-            services.documentMonitor.stopMonitoring();
-            logInfo('实时分析已禁用');
-            showInfoMessage('实时代码分析已禁用');
-          }
-        }
-        
-        // Handle debounce delay changes
-        if (oldConfig.debounceDelay !== newConfig.debounceDelay) {
-          // Restart monitoring to apply new debounce delay
-          if (newConfig.enableRealTimeAnalysis) {
-            services.documentMonitor.stopMonitoring();
-            services.documentMonitor.startMonitoring();
-          }
-          logInfo(`防抖延迟已更新: ${newConfig.debounceDelay}ms`);
-        }
-        
-        // Handle supported languages changes
-        if (JSON.stringify(oldConfig.supportedLanguages) !== JSON.stringify(newConfig.supportedLanguages)) {
-          logInfo(`支持的语言已更新: ${newConfig.supportedLanguages.join(', ')}`);
-        }
-        
-        // Handle file size limit changes
-        if (oldConfig.maxFileSize !== newConfig.maxFileSize) {
-          logInfo(`文件大小限制已更新: ${newConfig.maxFileSize} 字节`);
-        }
-        
-        logInfo('所有服务配置已同步更新');
-        
-      } catch (error) {
-        logError(error as Error, '更新配置失败');
-        showErrorMessage('配置更新失败，请重新加载扩展');
-      }
-    }
-  });
-
-  context.subscriptions.push(configChangeListener);
-  logInfo('配置变更监听器已注册');
-}
-
-/**
- * Register all detection rules with the rule engine
- * Priority order: API Keys (highest) -> SQL Danger -> Code Injection -> Framework -> Config
- */
-async function registerDetectionRules(ruleEngine: IRuleEngine): Promise<void> {
-  try {
-    logInfo('正在注册检测规则...');
-    
-    // Register API key detection rules (highest priority - prevents $5000 mistakes)
-    logInfo('注册 API 密钥检测规则...');
-    registerApiKeyRules(ruleEngine);
-    
-    // Register SQL danger detection rules (prevents data loss)
-    logInfo('注册 SQL 危险操作检测规则...');
-    registerSqlDangerRules(ruleEngine);
-    
-    // Register code injection detection rules (prevents XSS and command injection)
-    logInfo('注册代码注入检测规则...');
-    registerCodeInjectionRules(ruleEngine);
-    
-    // Register framework-specific risk detection rules (prevents framework-specific vulnerabilities)
-    logInfo('注册框架风险检测规则...');
-    registerFrameworkRiskRules(ruleEngine);
-    
-    // Register configuration error detection rules (prevents production misconfigurations)
-    logInfo('注册配置错误检测规则...');
-    registerConfigErrorRules(ruleEngine);
-    
-    // Get final statistics
-    const stats = ruleEngine.getStatistics();
-    logInfo(`规则注册完成 - 总计: ${stats.totalRules}, 已启用: ${stats.enabledRules}`);
-    logInfo(`按类别分布: ${Object.entries(stats.rulesByCategory).map(([cat, count]) => `${cat}: ${count}`).join(', ')}`);
-    logInfo(`按严重程度分布: ${Object.entries(stats.rulesBySeverity).map(([sev, count]) => `${sev}: ${count}`).join(', ')}`);
-    
-  } catch (error) {
-    logError(error as Error, '注册检测规则失败');
-    throw error;
-  }
-}
-
-/**
- * Verify that all components are properly connected for the real-time analysis workflow
- * 
- * Workflow verification:
- * 1. DocumentMonitor -> AnalysisEngine (for triggering analysis)
- * 2. AnalysisEngine -> RuleEngine (for executing rules)
- * 3. DocumentMonitor -> DiagnosticManager (for updating diagnostics)
- * 4. DiagnosticManager -> VSCode (for displaying issues)
- * 5. QuickFixProvider -> VSCode (for providing fixes)
- */
-function verifyComponentIntegration(): void {
-  if (!services) {
-    throw new Error('服务未初始化');
-  }
-
-  // Verify all components are initialized
-  const components = [
-    { name: '文档监控器', service: services.documentMonitor },
-    { name: '分析引擎', service: services.analysisEngine },
-    { name: '规则引擎', service: services.ruleEngine },
-    { name: '诊断管理器', service: services.diagnosticManager },
-    { name: '快速修复提供者', service: services.quickFixProvider }
-  ];
-
-  for (const component of components) {
-    if (!component.service) {
-      throw new Error(`${component.name}未正确初始化`);
-    }
-  }
-
-  // Verify rule engine has rules
-  const ruleStats = services.ruleEngine.getStatistics();
-  if (ruleStats.enabledRules === 0) {
-    throw new Error('规则引擎没有启用的规则');
-  }
-
-  logInfo('所有组件集成验证通过 - 实时分析工作流程已就绪');
-}
-
-/**
- * Register VSCode providers for complete integration
- * This connects our services to VSCode's UI and user interactions
- */
-function registerVSCodeProviders(
-  context: vscode.ExtensionContext,
-  quickFixProvider: IQuickFixProvider
-): void {
-  try {
-    // Register code action provider for quick fixes across all supported languages
-    const supportedLanguages = services?.config.supportedLanguages || ['*'];
-    let documentSelector: vscode.DocumentSelector = supportedLanguages
-      .filter(lang => lang !== '*')
-      .map(lang => ({
-        scheme: 'file',
-        language: lang
-      }));
-    
-    // Add wildcard selector if '*' is in supported languages
-    if (supportedLanguages.includes('*')) {
-      documentSelector = [...documentSelector, { scheme: 'file' }];
-    }
-
-    const codeActionProvider = vscode.languages.registerCodeActionsProvider(
-      documentSelector,
-      quickFixProvider,
-      {
-        providedCodeActionKinds: [
-          vscode.CodeActionKind.QuickFix,      // Individual fixes
-          vscode.CodeActionKind.Refactor,     // Code refactoring
-          vscode.CodeActionKind.SourceFixAll  // Fix all issues
-        ]
-      }
+        }, debounceDelay)
     );
-    
-    context.subscriptions.push(codeActionProvider);
-    logInfo(`代码操作提供者已注册 - 支持语言: ${supportedLanguages.join(', ')}`);
-    
-    // Register additional providers if needed in the future
-    // (e.g., hover provider for security tips, completion provider for secure alternatives)
-    
-  } catch (error) {
-    logError(error as Error, '注册 VSCode 提供者失败');
-    throw error;
-  }
+
+    // \u6ce8\u518c\u6587\u4ef6\u4fdd\u5b58\u76d1\u542c
+    const saveListener = vscode.workspace.onDidSaveTextDocument(
+        async (document) => {
+            if (!isEnabled || !shouldAnalyze(document)) {
+                return;
+            }
+            try {
+                const issues = await analyzer.analyzeFull(document);
+                diagnosticManager.updateDiagnostics(document, issues);
+            } catch (error) {
+                Logger.error('\u5168\u6587\u4ef6\u5206\u6790\u5931\u8d25', error);
+            }
+        }
+    );
+
+    // \u6ce8\u518c\u6587\u4ef6\u6253\u5f00\u76d1\u542c
+    const openListener = vscode.workspace.onDidOpenTextDocument(
+        async (document) => {
+            if (!isEnabled || !shouldAnalyze(document)) {
+                return;
+            }
+            try {
+                const issues = await analyzer.analyzeFull(document);
+                diagnosticManager.updateDiagnostics(document, issues);
+            } catch (error) {
+                Logger.error('\u6253\u5f00\u6587\u4ef6\u5206\u6790\u5931\u8d25', error);
+            }
+        }
+    );
+
+    // \u6ce8\u518c\u5feb\u901f\u4fee\u590d\u63d0\u4f9b\u8005
+    const quickFixProvider = vscode.languages.registerCodeActionsProvider(
+        { pattern: '**/*' },
+        new QuickFixProvider(diagnosticManager, ruleEngine),
+        { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
+    );
+
+    // \u6ce8\u518c\u626b\u63cf\u5de5\u4f5c\u533a\u547d\u4ee4
+    const scanCommand = vscode.commands.registerCommand(
+        'vibeguard.scanWorkspace',
+        async () => {
+            if (!isEnabled) {
+                vscode.window.showWarningMessage('VibeGuard \u5f53\u524d\u5df2\u7981\u7528');
+                return;
+            }
+            await scanWorkspace(analyzer, diagnosticManager);
+        }
+    );
+
+    // \u6ce8\u518c\u542f\u7528/\u7981\u7528\u547d\u4ee4
+    const toggleCommand = vscode.commands.registerCommand(
+        'vibeguard.toggleEnable',
+        async () => {
+            isEnabled = !isEnabled;
+            await vscode.workspace.getConfiguration('vibeguard').update('enable', isEnabled, true);
+            
+            if (isEnabled) {
+                vscode.window.showInformationMessage('VibeGuard \u5df2\u542f\u7528');
+                await scanOpenDocuments(analyzer, diagnosticManager);
+            } else {
+                vscode.window.showInformationMessage('VibeGuard \u5df2\u7981\u7528');
+                diagnosticManager.clearAll();
+            }
+        }
+    );
+
+    // \u6ce8\u518c\u914d\u7f6e\u53d8\u66f4\u76d1\u542c
+    const configChangeListener = vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration('vibeguard')) {
+            const config = vscode.workspace.getConfiguration('vibeguard');
+            isEnabled = config.get<boolean>('enable', true);
+            settings.reload();
+            
+            if (isEnabled) {
+                scanOpenDocuments(analyzer, diagnosticManager);
+            } else {
+                diagnosticManager.clearAll();
+            }
+        }
+    });
+
+    // \u6dfb\u52a0\u5230\u8ba2\u9605\u5217\u8868
+    context.subscriptions.push(
+        documentChangeListener,
+        saveListener,
+        openListener,
+        quickFixProvider,
+        scanCommand,
+        toggleCommand,
+        configChangeListener,
+        diagnosticManager
+    );
+
+    // \u521d\u59cb\u626b\u63cf\u5df2\u6253\u5f00\u7684\u6587\u6863
+    if (isEnabled) {
+        scanOpenDocuments(analyzer, diagnosticManager);
+    }
+
+    // \u663e\u793a\u542f\u52a8\u6d88\u606f
+    vscode.window.showInformationMessage('VibeGuard \u5df2\u542f\u52a8\uff0c\u5f00\u59cb\u4fdd\u62a4\u4f60\u7684\u4ee3\u7801\u5b89\u5168\uff01');
+    Logger.info('VibeGuard \u542f\u52a8\u6210\u529f');
+}
+
+export function deactivate() {
+    Logger.info('VibeGuard \u6b63\u5728\u5173\u95ed...');
+    diagnosticManager?.dispose();
 }
 
 /**
- * Get current extension services (for use by other modules)
+ * \u68c0\u67e5\u6587\u6863\u662f\u5426\u5e94\u8be5\u88ab\u5206\u6790
  */
-export function getExtensionServices(): ExtensionServices | null {
-  return services;
+function shouldAnalyze(document: vscode.TextDocument): boolean {
+    // \u8fc7\u6ee4\u975e\u6587\u4ef6\u65b9\u6848
+    if (document.uri.scheme !== 'file') {
+        return false;
+    }
+
+    // \u68c0\u67e5\u6587\u4ef6\u5927\u5c0f
+    const config = vscode.workspace.getConfiguration('vibeguard');
+    const maxFileSize = config.get<number>('maxFileSize', 500000);
+    if (document.getText().length > maxFileSize) {
+        return false;
+    }
+
+    // \u68c0\u67e5\u6392\u9664\u6587\u4ef6\u5939
+    const excludedFolders = config.get<string[]>('excludedFolders', ['node_modules', '.git', 'dist', 'build']);
+    const filePath = document.uri.fsPath;
+    for (const folder of excludedFolders) {
+        if (filePath.includes(`/${folder}/`) || filePath.includes(`\\${folder}\\`)) {
+            return false;
+        }
+    }
+
+    // \u68c0\u67e5\u652f\u6301\u7684\u8bed\u8a00
+    const supportedLanguages = [
+        'javascript', 'typescript', 'javascriptreact', 'typescriptreact',
+        'vue', 'python', 'sql', 'json', 'yaml', 'yml', 'dockerfile',
+        'plaintext', 'markdown', 'html', 'css', 'scss', 'less'
+    ];
+
+    return supportedLanguages.includes(document.languageId);
+}
+
+/**
+ * \u626b\u63cf\u6240\u6709\u5df2\u6253\u5f00\u7684\u6587\u6863
+ */
+async function scanOpenDocuments(analyzer: CodeAnalyzer, diagnosticManager: DiagnosticManager) {
+    const documents = vscode.workspace.textDocuments;
+    let count = 0;
+
+    for (const document of documents) {
+        if (shouldAnalyze(document)) {
+            try {
+                const issues = await analyzer.analyzeFull(document);
+                diagnosticManager.updateDiagnostics(document, issues);
+                count++;
+            } catch (error) {
+                Logger.error(`\u5206\u6790\u6587\u4ef6\u5931\u8d25: ${document.uri.fsPath}`, error);
+            }
+        }
+    }
+
+    if (count > 0) {
+        vscode.window.showInformationMessage(`VibeGuard: \u5df2\u626b\u63cf ${count} \u4e2a\u6587\u4ef6`);
+    }
+}
+
+/**
+ * \u626b\u63cf\u6574\u4e2a\u5de5\u4f5c\u533a
+ */
+async function scanWorkspace(analyzer: CodeAnalyzer, diagnosticManager: DiagnosticManager) {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+        vscode.window.showWarningMessage('\u6ca1\u6709\u6253\u5f00\u7684\u5de5\u4f5c\u533a');
+        return;
+    }
+
+    const progress = vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'VibeGuard: \u6b63\u5728\u626b\u63cf\u5de5\u4f5c\u533a...',
+        cancellable: true
+    }, async (progress, token) => {
+        let totalFiles = 0;
+        let scannedFiles = 0;
+        let totalIssues = 0;
+
+        // \u67e5\u627e\u6240\u6709\u6587\u4ef6
+        const files = await vscode.workspace.findFiles(
+            '**/*.{js,jsx,ts,tsx,vue,py,sql,json,yaml,yml,env,dockerfile}',
+            '**/node_modules/**'
+        );
+
+        totalFiles = files.length;
+
+        for (const file of files) {
+            if (token.isCancellationRequested) {
+                break;
+            }
+
+            try {
+                const document = await vscode.workspace.openTextDocument(file);
+                
+                if (shouldAnalyze(document)) {
+                    const issues = await analyzer.analyzeFull(document);
+                    diagnosticManager.updateDiagnostics(document, issues);
+                    totalIssues += issues.length;
+                    scannedFiles++;
+
+                    // \u66f4\u65b0\u8fdb\u5ea6
+                    const percentage = Math.round((scannedFiles / totalFiles) * 100);
+                    progress.report({
+                        increment: 100 / totalFiles,
+                        message: `\u5df2\u626b\u63cf ${scannedFiles}/${totalFiles} \u4e2a\u6587\u4ef6 (${percentage}%)`
+                    });
+                }
+            } catch (error) {
+                Logger.error(`\u626b\u63cf\u6587\u4ef6\u5931\u8d25: ${file.fsPath}`, error);
+            }
+        }
+
+        return { scannedFiles, totalIssues };
+    });
+
+    const result = await progress;
+    if (result) {
+        vscode.window.showInformationMessage(
+            `VibeGuard: \u626b\u63cf\u5b8c\u6210\uff0c\u68c0\u67e5\u4e86 ${result.scannedFiles} \u4e2a\u6587\u4ef6\uff0c\u53d1\u73b0 ${result.totalIssues} \u4e2a\u95ee\u9898`
+        );
+    }
 }

@@ -1,73 +1,47 @@
-# VibeGuard 更新日志 📝
+# \u66f4\u65b0\u65e5\u5fd7
 
-所有重要的更新都会记录在这个文件中。
+## [1.0.0] - 2025-09-10
 
-## [0.0.1] - 2024-12-13
+### \ud83c\udf86 \u9996\u6b21\u53d1\u5e03
 
-### 🎉 首次发布
+#### \u6838\u5fc3\u529f\u80fd
+- **\u81f4\u547d\u64cd\u4f5c\u68c0\u6d4b**: SQL DELETE/UPDATE \u65e0\u6761\u4ef6\u3001DROP DATABASE\u3001TRUNCATE \u7b49\u5371\u9669\u64cd\u4f5c
+- **\u5bc6\u94a5\u6cc4\u9732\u9632\u62a4**: API Key\u3001\u6570\u636e\u5e93\u5bc6\u7801\u3001JWT Token \u7b49\u654f\u611f\u4fe1\u606f\u68c0\u6d4b
+- **\u6846\u67b6\u9677\u9631\u9884\u8b66**: React\u3001Vue\u3001Node.js \u5e38\u89c1\u9519\u8bef\u548c\u6027\u80fd\u95ee\u9898
+- **\u751f\u4ea7\u73af\u5883\u914d\u7f6e\u68c0\u67e5**: debug=true\u3001CORS *\u3001\u672a\u52a0\u5bc6\u8fde\u63a5\u7b49
 
-#### ✨ 新功能
+#### \u652f\u6301\u8bed\u8a00
+- JavaScript / TypeScript
+- React / Vue
+- Node.js
+- Python
+- SQL
+- \u914d\u7f6e\u6587\u4ef6 (JSON, YAML, .env, Dockerfile)
 
-**核心安全检测**
-- 🔑 **API 密钥保护**: 检测 OpenAI、AWS、GitHub 等平台的硬编码密钥
-- 💾 **SQL 安全检查**: 防止危险的 DELETE、UPDATE、DROP 操作
-- 💻 **代码注入防护**: 检测 eval()、innerHTML、命令注入等风险
-- ⚛️ **框架特定检测**: 支持 React、Vue、Angular 安全检查
-- ⚙️ **配置错误检测**: 发现生产环境配置问题
+#### \u7279\u6027
+- \u5b9e\u65f6\u68c0\u6d4b\u548c\u8b66\u544a
+- \u5feb\u901f\u4fee\u590d\u5efa\u8bae
+- \u589e\u91cf\u5206\u6790\uff0c\u6027\u80fd\u4f18\u5316
+- \u667a\u80fd\u7f13\u5b58\u673a\u5236
+- \u53ef\u914d\u7f6e\u7684\u89c4\u5219\u7ea7\u522b
 
-**用户体验优化**
-- 🚨 **智能错误提示**: 用通俗易懂的中文解释安全风险
-- 💸 **真实案例警示**: 在错误信息中展示真实损失案例
-- 🛠️ **一键修复功能**: 提供多种安全修复方案
-- 🚀 **批量修复操作**: 支持一次修复多个安全问题
-- 📊 **安全检测报告**: 生成详细的项目安全报告
-
-**命令和功能**
-- 🔍 **检查当前文件的安全问题**: 手动触发单文件分析
-- 🛡️ **扫描整个项目的安全风险**: 全项目安全扫描
-- 🚀 **一键修复所有安全问题**: 批量应用安全修复
-- 📊 **查看安全检测报告**: 生成详细的安全分析报告
-- 📚 **学习安全编程知识**: 访问用户指南和最佳实践
-
-#### 🎯 专为 AI 编程用户设计
-
-**目标用户**
-- 🎨 使用 AI 工具的设计师
-- 📊 用 ChatGPT 写 SQL 的产品经理
-- 📈 用 AI 写脚本的运营人员
-- 🚀 用 AI 搭建 MVP 的创业者
-- 🎓 学习编程的学生
-
-#### 🛡️ 安全检测规则
-
-**API 密钥检测 (6个规则)**
-- OpenAI API 密钥、AWS 访问密钥、GitHub Token 等
-
-**SQL 危险操作 (6个规则)**
-- DELETE/UPDATE 无条件、DROP 操作等
-
-**代码注入防护 (7个规则)**
-- eval()、innerHTML、命令注入等
-
-**框架特定风险 (7个规则)**
-- React、Vue、Angular 安全检查
-
-**配置错误检测 (7个规则)**
-- 生产环境配置问题
-
-#### 📚 文档和指南
-
-- 📖 **用户指南**: 详细的使用说明和最佳实践
-- 🏆 **最佳实践**: 安全编程规范和团队协作指南
-- 🎯 **真实案例**: 基于实际损失事件的学习材料
+#### \u89c4\u5219\u7c7b\u522b
+- **\u5b89\u5168\u7c7b** (40+ \u89c4\u5219): SQL \u6ce8\u5165\u3001XSS\u3001\u547d\u4ee4\u6ce8\u5165\u3001\u8def\u5f84\u904d\u5386
+- **\u6027\u80fd\u7c7b** (15+ \u89c4\u5219): \u5185\u5b58\u6cc4\u6f0f\u3001\u65e0\u9650\u5faa\u73af\u3001\u963b\u585e\u64cd\u4f5c
+- **\u4ee3\u7801\u8d28\u91cf** (20+ \u89c4\u5219): \u5f02\u6b65\u9677\u9631\u3001\u7c7b\u578b\u5b89\u5168\u3001\u9519\u8bef\u5904\u7406
 
 ---
 
-## 🆘 需要帮助？
+## \u8def\u7ebf\u56fe
 
-- 📧 **技术支持**: help@vibeguard.dev
-- 💬 **社区讨论**: [Discord 社区](https://discord.gg/vibeguard)
-- 🐛 **问题反馈**: [GitHub Issues](https://github.com/vibeguard/vibeguard/issues)
-- 📚 **在线文档**: [vibeguard.dev/docs](https://vibeguard.dev/docs)
+### v1.1.0 (\u8ba1\u5212\u4e2d)
+- [ ] AI \u589e\u5f3a\u5206\u6790
+- [ ] \u66f4\u591a\u8bed\u8a00\u652f\u6301 (Go, Rust, Java)
+- [ ] \u56e2\u961f\u534f\u4f5c\u529f\u80fd
+- [ ] \u81ea\u5b9a\u4e49\u89c4\u5219\u7f16\u8f91\u5668
 
-**记住**: 最贵的代码错误，往往是最简单的那一行。让 VibeGuard 帮你避免下一个 $5000 的损失！ 🛡️
+### v1.2.0 (\u8ba1\u5212\u4e2d)
+- [ ] \u4ee3\u7801\u5ba1\u67e5\u96c6\u6210
+- [ ] CI/CD \u96c6\u6210
+- [ ] \u5b89\u5168\u62a5\u544a\u751f\u6210
+- [ ] \u591a\u8bed\u8a00\u652f\u6301 (i18n)
