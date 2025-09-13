@@ -73,8 +73,8 @@
   - 测试 SecurityIssue 到 VSCode Diagnostic 的转换
   - _Requirements: 4.3, 1.5, 2.4_
 
-- [ ] 6. 实现一键快速修复功能
-- [ ] 6.1 创建快速修复提供者
+- [x] 6. 实现一键快速修复功能
+- [x] 6.1 创建快速修复提供者
 
   - 创建 src/quickfix/QuickFixProvider.ts 文件
   - 实现 QuickFixProvider 类，继承 VSCode CodeActionProvider
@@ -82,7 +82,7 @@
   - 实现批量修复功能，支持一次修复多个问题
   - _Requirements: 1.6, 4.4_
 
-- [ ] 6.2 编写快速修复测试
+- [x] 6.2 编写快速修复测试
 
   - 创建 src/test/quickfix/QuickFixProvider.test.ts 测试文件
   - 测试 API 密钥快速修复功能
