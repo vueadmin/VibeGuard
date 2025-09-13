@@ -43,6 +43,7 @@
   - 实现 AWS 访问密钥检测（AKIA 开头模式）
   - 实现 GitHub Token 检测（ghp\_开头模式）
   - 实现通用密钥模式检测（api_key、secret、password、token）
+  - 实现数据库连接字符串检测和 JWT 密钥检测
   - 注册所有 API 密钥规则到规则引擎
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
@@ -63,6 +64,7 @@
   - 将 SecurityIssue 转换为 VSCode Diagnostic 对象
   - 实现诊断的显示、更新和清除功能
   - 添加中文错误信息显示，避免技术术语
+  - 实现诊断信息分组和增强功能
   - _Requirements: 4.3, 1.5, 2.4_
 
 - [x] 5.2 编写诊断管理器测试
@@ -79,16 +81,19 @@
   - 创建 src/quickfix/QuickFixProvider.ts 文件
   - 实现 QuickFixProvider 类，继承 VSCode CodeActionProvider
   - 为 API 密钥问题提供环境变量替换修复
+  - 为 SQL 危险操作提供 WHERE 条件添加修复
   - 实现批量修复功能，支持一次修复多个问题
-  - _Requirements: 1.6, 4.4_
+  - 实现代码注入问题的基础修复功能
+  - _Requirements: 1.6, 4.4, 2.5_
 
 - [x] 6.2 编写快速修复测试
 
   - 创建 src/test/quickfix/QuickFixProvider.test.ts 测试文件
   - 测试 API 密钥快速修复功能
+  - 测试 SQL 危险操作快速修复功能
   - 测试批量修复功能
   - 测试快速修复的用户体验
-  - _Requirements: 1.6, 4.4_
+  - _Requirements: 1.6, 4.4, 2.5_
 
 - [x] 7. 实现 SQL 危险操作检测
 - [x] 7.1 创建 SQL 规则定义
@@ -97,6 +102,8 @@
   - 实现 DELETE FROM 无 WHERE 条件检测
   - 实现 UPDATE SET 无 WHERE 条件检测
   - 实现 DROP TABLE/DATABASE 检测
+  - 实现 TRUNCATE TABLE 检测
+  - 实现 SQL 注入风险检测（字符串拼接）
   - 注册所有 SQL 规则到规则引擎
   - _Requirements: 2.1, 2.2, 2.3_
 
@@ -113,34 +120,39 @@
 
   - 修改 src/extension.ts，集成诊断管理器和快速修复提供者
   - 连接 DocumentMonitor、AnalysisEngine、RuleEngine 和 DiagnosticManager
-  - 注册 API 密钥检测规则到规则引擎
+  - 注册 API 密钥检测规则和 SQL 危险操作规则到规则引擎
   - 实现完整的实时分析工作流程
   - 确保扩展激活时所有服务正常启动
-  - _Requirements: 4.1, 4.2, 1.1, 1.2, 1.3, 1.4_
+  - 添加配置变更监听和服务管理
+  - _Requirements: 4.1, 4.2, 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3_
 
 - [x] 8.2 编写扩展集成测试
 
   - 创建 src/test/integration/extension-integration.test.ts 测试文件
   - 测试完整的文档分析工作流程
   - 测试 API 密钥检测的端到端功能
+  - 测试 SQL 危险操作检测的端到端功能
   - 测试诊断显示和快速修复的集成
-  - _Requirements: 4.1, 4.2_
+  - _Requirements: 4.1, 4.2, 2.1, 2.2, 2.3_
 
-- [ ] 9. 实现代码注入检测规则
-- [ ] 9.1 创建代码注入规则定义
+- [x] 9. 实现代码注入检测规则
+- [x] 9.1 创建代码注入规则定义
 
   - 创建 src/rules/definitions/code-injection-rules.ts 规则定义文件
   - 实现 eval() 函数检测和安全替代建议
   - 实现 innerHTML 直接赋值检测和 XSS 风险警告
   - 实现 child_process.exec/spawn 命令注入检测
+  - 实现 document.write() 和其他 DOM 操作风险检测
   - 注册代码注入规则到规则引擎
+  - 更新扩展入口点以注册新规则
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 9.2 编写代码注入检测测试
+- [x] 9.2 编写代码注入检测测试
 
   - 创建 src/test/rules/code-injection-rules.test.ts 测试文件
   - 测试所有代码注入检测模式
   - 编写基于真实攻击场景的测试用例
+  - 测试快速修复功能
   - _Requirements: 3.1, 3.2, 3.3_
 
 - [ ] 10. 实现框架特定风险检测
@@ -150,7 +162,9 @@
   - 实现 React dangerouslySetInnerHTML 检测
   - 实现 Vue v-html 指令风险检测
   - 实现 React useEffect 无限循环检测
+  - 实现 Angular bypassSecurityTrust\* 方法检测
   - 注册框架风险规则到规则引擎
+  - 更新扩展入口点以注册新规则
   - _Requirements: 5.1, 5.2, 5.3_
 
 - [ ] 10.2 编写框架风险检测测试
@@ -158,6 +172,7 @@
   - 创建 src/test/rules/framework-rules.test.ts 测试文件
   - 测试 React 和 Vue 特定风险检测
   - 编写基于真实框架代码的测试用例
+  - 测试框架特定的快速修复功能
   - _Requirements: 5.1, 5.2, 5.3_
 
 - [ ] 11. 实现配置错误检测
@@ -168,7 +183,9 @@
   - 实现 CORS 配置风险检测（允许所有域名）
   - 实现 Docker 端口暴露风险检测
   - 实现 .env 文件示例值检测
+  - 实现 SSL/TLS 配置错误检测
   - 注册配置错误规则到规则引擎
+  - 更新扩展入口点以注册新规则
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
 - [ ] 11.2 编写配置错误检测测试
@@ -176,6 +193,7 @@
   - 创建 src/test/rules/config-rules.test.ts 测试文件
   - 测试所有配置错误检测模式
   - 编写基于真实配置文件的测试用例
+  - 测试配置修复建议
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
 - [ ] 12. 增强白名单和误报控制
@@ -185,6 +203,7 @@
   - 实现注释内容过滤，避免检测注释中的示例代码
   - 实现模板字符串变量检测，避免误报动态内容
   - 实现测试文件特殊处理，降低测试代码的警告级别
+  - 实现文档和示例文件的特殊处理
   - 更新 RuleEngine 以支持增强的白名单功能
   - _Requirements: 8.1, 8.2, 8.3, 8.5_
 
@@ -193,6 +212,7 @@
   - 创建 src/test/rules/whitelist.test.ts 测试文件
   - 测试各种白名单过滤场景
   - 测试误报控制的有效性
+  - 测试边界情况和复杂场景
   - _Requirements: 8.1, 8.2, 8.3, 8.5_
 
 - [ ] 13. 创建真实场景测试套件
@@ -201,6 +221,7 @@
   - 创建 src/test/scenarios/ 目录
   - 创建 ChatGPT 生成代码的测试用例集合
   - 创建 Claude 生成代码的测试用例集合
+  - 创建 GitHub Copilot 生成代码的测试用例集合
   - 实现端到端测试，验证完整的检测和修复流程
   - 添加性能测试，验证大文件和实时分析性能
   - 创建回归测试套件，防止功能退化
@@ -211,6 +232,8 @@
   - 优化所有规则的中文错误信息，确保通俗易懂
   - 添加错误信息中的真实损失案例引用
   - 实现快速修复的用户友好提示
+  - 添加更多快速修复选项和批量操作
   - 更新 package.json 中的命令和配置描述
   - 更新 README 文档，包含使用示例和截图
+  - 创建用户指南和最佳实践文档
   - _Requirements: 4.3, 1.5, 2.4, 3.4_

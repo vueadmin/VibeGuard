@@ -184,15 +184,15 @@ export class RuleEngine implements IRuleEngine {
     }
 
     // Always check built-in whitelist
-    return this.isBuiltInWhitelisted(matchText, line);
+    return this.isBuiltInWhitelisted(matchText, line, rule);
   }
 
   /**
    * Built-in whitelist checks for common false positives
    */
-  private isBuiltInWhitelisted(matchText: string, line: string): boolean {
+  private isBuiltInWhitelisted(matchText: string, line: string, rule: DetectionRule): boolean {
     // Skip environment variable references
-    if (line.includes('process.env') || line.includes('$env:') || line.includes('${')) {
+    if (line.includes('process.env') || line.includes('$env:')) {
       return true;
     }
 
@@ -201,8 +201,12 @@ export class RuleEngine implements IRuleEngine {
       return true;
     }
 
-    // Skip template strings with variables
+    // Skip template strings with variables (except for code injection rules that need to detect dangerous template usage)
     if (line.includes('${') && line.includes('}')) {
+      // Code injection rules should detect dangerous template string usage
+      if (rule.category === SecurityCategory.CODE_INJECTION) {
+        return false;
+      }
       return true;
     }
 
