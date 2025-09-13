@@ -26,8 +26,8 @@
   - 编写分析引擎的单元测试
   - _Requirements: 7.1, 7.2, 7.3_
 
-- [ ] 3. 实现 API 密钥检测规则（最高优先级）
-- [ ] 3.1 创建规则引擎基础架构
+- [x] 3. 实现规则引擎基础架构
+- [x] 3.1 创建规则引擎核心
 
   - 实现 RuleEngine 类和 DetectionRule 接口
   - 创建规则注册和执行机制
@@ -35,45 +35,78 @@
   - 编写规则引擎的单元测试
   - _Requirements: 8.1, 8.3_
 
-- [ ] 3.2 实现 API 密钥检测规则
+- [ ] 4. 实现 API 密钥检测规则（最高优先级）
+- [ ] 4.1 创建 API 密钥检测规则定义
 
-  - 创建 api-keys.ts 规则定义文件
+  - 创建 src/rules/definitions/api-keys.ts 规则定义文件
   - 实现 OpenAI API 密钥检测（sk-开头模式）
   - 实现 AWS 访问密钥检测（AKIA 开头模式）
   - 实现 GitHub Token 检测（ghp\_开头模式）
   - 实现通用密钥模式检测（api_key、secret、password、token）
-  - 编写 API 密钥检测的单元测试，包含真实案例
+  - 注册所有 API 密钥规则到规则引擎
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 4. 实现 SQL 危险操作检测
-- [ ] 4.1 创建 SQL 规则定义
+- [ ] 4.2 编写 API 密钥检测测试
 
-  - 创建 sql-rules.ts 规则定义文件
-  - 实现 DELETE FROM 无 WHERE 条件检测
-  - 实现 UPDATE SET 无 WHERE 条件检测
-  - 实现 DROP TABLE/DATABASE 检测
-  - 编写 SQL 危险操作检测的单元测试
-  - _Requirements: 2.1, 2.2, 2.3_
+  - 创建 src/test/rules/api-keys.test.ts 测试文件
+  - 编写基于真实 AI 生成代码的测试用例
+  - 测试所有 API 密钥检测模式
+  - 测试白名单过滤功能
+  - 测试快速修复建议生成
+  - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
 - [ ] 5. 实现诊断管理和显示
 - [ ] 5.1 创建诊断管理器
 
+  - 创建 src/diagnostics/DiagnosticManager.ts 文件
   - 实现 DiagnosticManager 类，处理 VSCode 诊断 API
   - 将 SecurityIssue 转换为 VSCode Diagnostic 对象
   - 实现诊断的显示、更新和清除功能
   - 添加中文错误信息显示，避免技术术语
-  - 编写诊断管理器的单元测试
+  - _Requirements: 4.3, 1.5, 2.4_
+
+- [ ] 5.2 编写诊断管理器测试
+
+  - 创建 src/test/diagnostics/DiagnosticManager.test.ts 测试文件
+  - 测试诊断信息的创建和更新
+  - 测试诊断信息的清除功能
+  - 测试 SecurityIssue 到 VSCode Diagnostic 的转换
   - _Requirements: 4.3, 1.5, 2.4_
 
 - [ ] 6. 实现一键快速修复功能
 - [ ] 6.1 创建快速修复提供者
 
+  - 创建 src/quickfix/QuickFixProvider.ts 文件
   - 实现 QuickFixProvider 类，继承 VSCode CodeActionProvider
   - 为 API 密钥问题提供环境变量替换修复
-  - 为 SQL 危险操作提供 WHERE 条件添加修复
   - 实现批量修复功能，支持一次修复多个问题
-  - 编写快速修复功能的单元测试
-  - _Requirements: 1.6, 2.5, 4.4_
+  - _Requirements: 1.6, 4.4_
+
+- [ ] 6.2 编写快速修复测试
+
+  - 创建 src/test/quickfix/QuickFixProvider.test.ts 测试文件
+  - 测试 API 密钥快速修复功能
+  - 测试批量修复功能
+  - 测试快速修复的用户体验
+  - _Requirements: 1.6, 4.4_
+
+- [ ] 7. 实现 SQL 危险操作检测
+- [ ] 7.1 创建 SQL 规则定义
+
+  - 创建 src/rules/definitions/sql-rules.ts 规则定义文件
+  - 实现 DELETE FROM 无 WHERE 条件检测
+  - 实现 UPDATE SET 无 WHERE 条件检测
+  - 实现 DROP TABLE/DATABASE 检测
+  - 注册所有 SQL 规则到规则引擎
+  - _Requirements: 2.1, 2.2, 2.3_
+
+- [ ] 7.2 编写 SQL 危险操作测试
+
+  - 创建 src/test/rules/sql-rules.test.ts 测试文件
+  - 测试所有 SQL 危险操作检测模式
+  - 测试 SQL 快速修复建议
+  - 编写基于真实场景的测试用例
+  - _Requirements: 2.1, 2.2, 2.3_
 
 - [ ] 7. 实现代码注入检测规则
 - [ ] 7.1 创建代码注入规则定义
