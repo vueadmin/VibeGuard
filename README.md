@@ -1,71 +1,118 @@
-# vibeguard-kiro README
+# VibeGuard 🛡️
 
-This is the README for your extension "vibeguard-kiro". After writing up a brief description, we recommend including the following sections.
+> **一句话介绍**：实时检测代码中的致命错误，防止你删库跑路、泄露密钥、生产事故。
 
-## Features
+## 🚨 它能救你的命
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+想象一下这些场景：
+- 你不小心写了 `DELETE FROM users` 没加 WHERE，整个用户表没了
+- 你把 API Key 硬编码在代码里，推到 GitHub 被盗刷了 $5000
+- 你在生产环境开了 `debug=True`，黑客看到了所有错误堆栈
+- 你用了 `rm -rf /`，整个服务器没了
 
-For example if there is an image subfolder under your extension project workspace:
+**VibeGuard 会在你敲下这些代码的瞬间发出警告！**
 
-\!\[feature X\]\(images/feature-x.png\)
+## 🎯 核心功能
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+### 1. 💀 致命操作检测
+- SQL 无条件 DELETE/UPDATE/DROP DATABASE
+- JavaScript eval() 执行任意代码
+- React dangerouslySetInnerHTML XSS 漏洞
+- Vue v-html 注入风险
+- Node.js child_process 命令注入
+- Python os.system/eval 危险调用
 
-## Requirements
+### 2. 🔑 密钥泄露防护
+- API Key 硬编码检测（AWS, Azure, Google Cloud）
+- 数据库密码明文存储
+- JWT Token/OAuth Secret 泄露
+- .env 文件中的敏感信息
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+### 3. 🐛 框架陷阱预警
+- React useEffect 无限循环
+- Vue props 直接修改
+- async/await 在 forEach 中不生效
+- 未处理的 Promise rejection
+- 内存泄漏（未清理的事件监听器）
 
-## Extension Settings
+### 4. ⚙️ 生产环境配置检查
+- Flask/Django debug=True
+- CORS 允许所有域名
+- Redis 未设置密码
+- Docker 暴露危险端口
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## 📦 支持的技术栈
 
-For example:
+- **前端**: JavaScript, TypeScript, React, Vue
+- **后端**: Node.js, Python
+- **数据库**: MySQL, PostgreSQL, MongoDB, Redis
+- **配置文件**: JSON, YAML, .env, Dockerfile, package.json
 
-This extension contributes the following settings:
+## 🚀 快速开始
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+### 安装
+1. 在 VS Code 扩展商店搜索 "VibeGuard"
+2. 点击安装
+3. 重启 VS Code
 
-## Known Issues
+### 使用
+插件会自动运行，当你写下危险代码时：
+- 🔴 红色波浪线 = 致命错误（必须修复）
+- 🟡 黄色波浪线 = 潜在风险（建议修复）
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+鼠标悬停查看详细说明，点击 💡 获取修复建议。
 
-## Release Notes
+## 💡 示例
 
-Users appreciate release notes as you update your extension.
+### SQL 删库警告
+```sql
+-- ❌ 危险！会删除整个表
+DELETE FROM users;
 
-### 1.0.0
+-- ✅ 安全
+DELETE FROM users WHERE id = 123;
+```
 
-Initial release of ...
+### API Key 泄露检测
+```javascript
+// ❌ 危险！密钥泄露
+const apiKey = "sk-1234567890abcdef";
 
-### 1.0.1
+// ✅ 安全
+const apiKey = process.env.API_KEY;
+```
 
-Fixed issue #.
+### React XSS 防护
+```jsx
+// ❌ 危险！XSS 攻击
+<div dangerouslySetInnerHTML={{__html: userInput}} />
 
-### 1.1.0
+// ✅ 安全
+<div>{userInput}</div>
+```
 
-Added features X, Y, and Z.
+## 🏆 为什么选择 VibeGuard？
+
+1. **实时检测** - 你写代码的同时就能发现问题
+2. **新手友好** - 用通俗语言解释技术问题
+3. **框架特定** - 深度理解 React/Vue/Node.js 特有陷阱
+4. **零配置** - 安装即用，无需任何设置
+5. **性能优异** - 增量检测，不影响编码体验
+
+## 🤝 贡献
+
+VibeGuard 是开源项目，欢迎贡献！
+
+- 报告 Bug: [GitHub Issues](https://github.com/vibeguard/vibeguard/issues)
+- 贡献代码: Fork 后提交 PR
+- 添加规则: 在 `src/rules/` 目录添加新规则
+
+## 📄 许可证
+
+MIT License - 详见 [LICENSE](LICENSE)
 
 ---
 
-## Following extension guidelines
+**VibeGuard** - 让编码更安全，让新手少踩坑 💪
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+> 由 VibeHacks 24h 黑客松孵化，为全球开发者开源
