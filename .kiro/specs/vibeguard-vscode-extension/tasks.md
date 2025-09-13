@@ -90,8 +90,8 @@
   - 测试快速修复的用户体验
   - _Requirements: 1.6, 4.4_
 
-- [ ] 7. 实现 SQL 危险操作检测
-- [ ] 7.1 创建 SQL 规则定义
+- [x] 7. 实现 SQL 危险操作检测
+- [x] 7.1 创建 SQL 规则定义
 
   - 创建 src/rules/definitions/sql-rules.ts 规则定义文件
   - 实现 DELETE FROM 无 WHERE 条件检测
@@ -100,7 +100,7 @@
   - 注册所有 SQL 规则到规则引擎
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 7.2 编写 SQL 危险操作测试
+- [x] 7.2 编写 SQL 危险操作测试
 
   - 创建 src/test/rules/sql-rules.test.ts 测试文件
   - 测试所有 SQL 危险操作检测模式
