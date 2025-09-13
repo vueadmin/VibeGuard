@@ -35,8 +35,8 @@
   - 编写规则引擎的单元测试
   - _Requirements: 8.1, 8.3_
 
-- [ ] 4. 实现 API 密钥检测规则（最高优先级）
-- [ ] 4.1 创建 API 密钥检测规则定义
+- [x] 4. 实现 API 密钥检测规则（最高优先级）
+- [x] 4.1 创建 API 密钥检测规则定义
 
   - 创建 src/rules/definitions/api-keys.ts 规则定义文件
   - 实现 OpenAI API 密钥检测（sk-开头模式）
@@ -46,7 +46,7 @@
   - 注册所有 API 密钥规则到规则引擎
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 4.2 编写 API 密钥检测测试
+- [x] 4.2 编写 API 密钥检测测试
 
   - 创建 src/test/rules/api-keys.test.ts 测试文件
   - 编写基于真实 AI 生成代码的测试用例
