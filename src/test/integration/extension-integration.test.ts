@@ -132,8 +132,8 @@ suite('Extension Integration Tests', () => {
     // Create a test document with patterns that should be detected
     const testContent = `
 // Test API key detection with realistic patterns
-const openaiKey = "sk-proj-1234567890abcdef1234567890abcdef12345678";
-const awsKey = "AKIA1234567890123456";
+const openaiKey = "sk-proj-test1234567890abcdef1234567890abcdef12345678";
+const awsKey = "AKIATEST567890123456";
 const config = {
   apiKey: "your-api-key-here",
   secret: "your-secret-key",
@@ -352,7 +352,7 @@ const updateQuery = "UPDATE products SET price = 0";
     
     // Add dangerous content
     const dangerousContent = `
-const openaiKey = "sk-proj-abcdef1234567890abcdef1234567890abcdef12";
+const openaiKey = "sk-proj-testabcdef1234567890abcdef1234567890abcdef12";
 const query = "DELETE FROM users";
 `;
     
@@ -449,9 +449,9 @@ const query = "DELETE FROM users";
     const apiKeyTestContent = `
 // Various API key patterns that should be detected
 const config = {
-  openaiKey: "sk-proj-abcdef1234567890abcdef1234567890abcdef12",
-  awsAccessKey: "AKIA1234567890123456",
-  githubToken: "ghp_1234567890abcdef1234567890abcdef123456",
+  openaiKey: "sk-proj-testabcdef1234567890abcdef1234567890abcdef12",
+  awsAccessKey: "AKIATEST567890123456",
+  githubToken: "ghp_test567890abcdef1234567890abcdef123456",
   apiKey: "your-api-key-here",
   secretKey: "hardcoded-secret",
   password: "test-password-123",

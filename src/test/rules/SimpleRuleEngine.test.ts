@@ -46,7 +46,7 @@ suite('RuleEngine Tests', () => {
     };
     ruleEngine.registerRule(rule);
 
-    const code = 'const apiKey = "sk-1234567890abcdef1234567890abcdef1234567890abcdef";';
+    const code = 'const apiKey = "sk-test1234567890abcdef1234567890abcdef1234567890abcdef";';
     const issues = ruleEngine.executeRules(code, 'javascript');
 
     assert.strictEqual(issues.length, 1);
@@ -73,7 +73,7 @@ suite('RuleEngine Tests', () => {
     assert.strictEqual(envIssues.length, 0);
 
     // Should detect hardcoded keys
-    const hardcodedCode = 'const apiKey = "sk-1234567890abcdef1234567890abcdef1234567890abcdef";';
+    const hardcodedCode = 'const apiKey = "sk-test1234567890abcdef1234567890abcdef1234567890abcdef";';
     const hardcodedIssues = ruleEngine.executeRules(hardcodedCode, 'javascript');
     assert.strictEqual(hardcodedIssues.length, 1);
   });
@@ -95,7 +95,7 @@ suite('RuleEngine Tests', () => {
     };
     ruleEngine.registerRule(rule);
 
-    const code = 'const apiKey = "sk-1234567890abcdef1234567890abcdef1234567890abcdef";';
+    const code = 'const apiKey = "sk-test1234567890abcdef1234567890abcdef1234567890abcdef";';
     const issues = ruleEngine.executeRules(code, 'javascript');
 
     assert.strictEqual(issues.length, 1);

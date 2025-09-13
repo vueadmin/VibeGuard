@@ -37,22 +37,22 @@ suite('API Key Detection Rules Tests', () => {
       const testCases = [
         {
           name: 'Classic OpenAI key',
-          code: 'const apiKey = "sk-1234567890abcdef1234567890abcdef1234567890abcdef";',
+          code: 'const apiKey = "sk-test1234567890abcdef1234567890abcdef1234567890abcdef";',
           shouldDetect: true
         },
         {
           name: 'New project-based OpenAI key',
-          code: 'const apiKey = "sk-proj-1234567890abcdef1234567890abcdef12345678";',
+          code: 'const apiKey = "sk-proj-test1234567890abcdef1234567890abcdef12345678";',
           shouldDetect: true
         },
         {
           name: 'OpenAI key in object',
-          code: 'const config = { apiKey: "sk-1234567890abcdef1234567890abcdef1234567890abcdef" };',
+          code: 'const config = { apiKey: "sk-test1234567890abcdef1234567890abcdef1234567890abcdef" };',
           shouldDetect: true
         },
         {
           name: 'OpenAI key in function call',
-          code: 'openai.configure("sk-1234567890abcdef1234567890abcdef1234567890abcdef");',
+          code: 'openai.configure("sk-test1234567890abcdef1234567890abcdef1234567890abcdef");',
           shouldDetect: true
         }
       ];
@@ -73,7 +73,7 @@ suite('API Key Detection Rules Tests', () => {
     });
 
     test('should provide quick fix for OpenAI keys', () => {
-      const code = 'const apiKey = "sk-1234567890abcdef1234567890abcdef1234567890abcdef";';
+      const code = 'const apiKey = "sk-test1234567890abcdef1234567890abcdef1234567890abcdef";';
       const issues = ruleEngine.executeRules(code, 'javascript');
       const openaiIssue = issues.find(issue => issue.code === 'API_KEY_OPENAI');
 
@@ -105,17 +105,17 @@ suite('API Key Detection Rules Tests', () => {
       const testCases = [
         {
           name: 'Standard AWS access key',
-          code: 'const accessKey = "AKIAIOSFODNN7EXAMPLE";',
+          code: 'const accessKey = "AKIATEST567890123456";',
           shouldDetect: true
         },
         {
           name: 'AWS key in config object',
-          code: 'const awsConfig = { accessKeyId: "AKIAI44QH8DHBEXAMPLE" };',
+          code: 'const awsConfig = { accessKeyId: "AKIATEST44QH8DHBEXAMPLE" };',
           shouldDetect: true
         },
         {
           name: 'AWS key in environment file',
-          code: 'AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE',
+          code: 'AWS_ACCESS_KEY_ID=AKIATEST567890123456',
           shouldDetect: true
         }
       ];
@@ -156,12 +156,12 @@ suite('API Key Detection Rules Tests', () => {
       const testCases = [
         {
           name: 'GitHub personal access token',
-          code: 'const token = "ghp_1234567890abcdef1234567890abcdef123456";',
+          code: 'const token = "ghp_test567890abcdef1234567890abcdef123456";',
           shouldDetect: true
         },
         {
           name: 'GitHub token in headers',
-          code: 'headers: { Authorization: "token ghp_1234567890abcdef1234567890abcdef123456" }',
+          code: 'headers: { Authorization: "token ghp_test567890abcdef1234567890abcdef123456" }',
           shouldDetect: true
         }
       ];
@@ -376,7 +376,7 @@ suite('API Key Detection Rules Tests', () => {
         import OpenAI from 'openai';
         
         const openai = new OpenAI({
-          apiKey: 'sk-proj-1234567890abcdef1234567890abcdef12345678'
+          apiKey: 'sk-proj-test1234567890abcdef1234567890abcdef12345678'
         });
         
         async function generateText(prompt) {
@@ -400,7 +400,7 @@ suite('API Key Detection Rules Tests', () => {
         import AWS from 'aws-sdk';
         
         const s3 = new AWS.S3({
-          accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
+          accessKeyId: 'AKIATEST567890123456',
           secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
           region: 'us-west-2'
         });
@@ -422,7 +422,7 @@ suite('API Key Detection Rules Tests', () => {
         const { Octokit } = require('@octokit/rest');
         
         const octokit = new Octokit({
-          auth: 'ghp_1234567890abcdef1234567890abcdef123456'
+          auth: 'ghp_test567890abcdef1234567890abcdef123456'
         });
         
         async function getRepos() {
@@ -483,9 +483,9 @@ suite('API Key Detection Rules Tests', () => {
     test('should handle mixed scenarios with multiple issues', () => {
       const mixedCode = `
         // Multiple API keys in one file
-        openai = 'sk-proj-1234567890abcdef1234567890abcdef12345678'
-        accessKeyId = 'AKIAIOSFODNN7EXAMPLE'
-        github = 'ghp_1234567890abcdef1234567890abcdef123456'
+        openai = 'sk-proj-test1234567890abcdef1234567890abcdef12345678'
+        accessKeyId = 'AKIATEST567890123456'
+        github = 'ghp_test567890abcdef1234567890abcdef123456'
         database = 'mongodb://user:pass@localhost/db'
         jwt_secret = 'super-secret-jwt-key'
       `;
@@ -544,7 +544,7 @@ suite('API Key Detection Rules Tests', () => {
     test('should ignore comments and documentation', () => {
       const commentCases = [
         '// Example: sk-proj-your-api-key-here',
-        '/* API Key: sk-1234567890abcdef1234567890abcdef1234567890abcdef */',
+        '/* API Key: sk-test1234567890abcdef1234567890abcdef1234567890abcdef */',
         '* @param apiKey - Your OpenAI API key (sk-...)',
         '# Set your API key: export OPENAI_API_KEY=sk-...'
       ];
@@ -597,11 +597,11 @@ suite('API Key Detection Rules Tests', () => {
           expectedReplacement: 'process.env.OPENAI_API_KEY'
         },
         {
-          code: 'const accessKey = "AKIAIOSFODNN7EXAMPLE";',
+          code: 'const accessKey = "AKIATEST567890123456";',
           expectedReplacement: 'process.env.AWS_ACCESS_KEY_ID'
         },
         {
-          code: 'const token = "ghp_1234567890abcdef1234567890abcdef123456";',
+          code: 'const token = "ghp_test567890abcdef1234567890abcdef123456";',
           expectedReplacement: 'process.env.GITHUB_TOKEN'
         },
         {

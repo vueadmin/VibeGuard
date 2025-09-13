@@ -89,14 +89,14 @@ suite('Enhanced Whitelist Mechanism', () => {
   suite('Comment Content Filtering', () => {
     test('should ignore various comment styles', () => {
       const commentCases = [
-        '// Example API key: sk-proj1234567890abcdef1234567890abcdef12345678',
-        '# API key example: sk-proj1234567890abcdef1234567890abcdef12345678',
+        '// Example API key: sk-projtest1234567890abcdef1234567890abcdef12345678',
+        '# API key example: sk-projtest1234567890abcdef1234567890abcdef12345678',
         '-- DELETE FROM users; -- This would be dangerous',
-        '<!-- API key: sk-proj1234567890abcdef1234567890abcdef12345678 -->',
-        '/* API key for testing: sk-proj1234567890abcdef1234567890abcdef12345678 */',
-        '/** @example const key = "sk-proj1234567890abcdef1234567890abcdef12345678"; */',
-        '```javascript\nconst key = "sk-proj1234567890abcdef1234567890abcdef12345678";\n```',
-        '// @ts-ignore: sk-proj1234567890abcdef1234567890abcdef12345678'
+        '<!-- API key: sk-projtest1234567890abcdef1234567890abcdef12345678 -->',
+        '/* API key for testing: sk-projtest1234567890abcdef1234567890abcdef12345678 */',
+        '/** @example const key = "sk-projtest1234567890abcdef1234567890abcdef12345678"; */',
+        '```javascript\nconst key = "sk-projtest1234567890abcdef1234567890abcdef12345678";\n```',
+        '// @ts-ignore: sk-projtest1234567890abcdef1234567890abcdef12345678'
       ];
 
       commentCases.forEach(code => {
@@ -106,15 +106,15 @@ suite('Enhanced Whitelist Mechanism', () => {
     });
 
     test('should detect real code after comments', () => {
-      const code = `// This is an example: sk-proj1234567890abcdef1234567890abcdef12345678
-const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
+      const code = `// This is an example: sk-projtest1234567890abcdef1234567890abcdef12345678
+const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321";`;
       const issues = ruleEngine.executeRules(code, 'javascript');
       assert.ok(issues.length > 0, 'Should detect real key after comment');
       assert.strictEqual(issues[0].location.line, 1, 'Should detect on the correct line');
     });
 
     test('should detect actual code with ESLint comments', () => {
-      const code = '// eslint-disable-next-line\nconst key = "sk-proj1234567890abcdef1234567890abcdef12345678";';
+      const code = '// eslint-disable-next-line\nconst key = "sk-projtest1234567890abcdef1234567890abcdef12345678";';
       const issues = ruleEngine.executeRules(code, 'javascript');
       assert.ok(issues.length > 0, 'Should detect actual key despite ESLint comment');
     });
@@ -145,7 +145,7 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
     });
 
     test('should detect hardcoded keys in templates', () => {
-      const code = 'const auth = `Bearer sk-proj1234567890abcdef1234567890abcdef12345678`;';
+      const code = 'const auth = `Bearer sk-projtest1234567890abcdef1234567890abcdef12345678`;';
       const issues = ruleEngine.executeRules(code, 'javascript');
       assert.ok(issues.length > 0, 'Should detect hardcoded key even in template');
     });
@@ -185,8 +185,8 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
         'const key = "[your-api-key]";',
         'const key = "<your-api-key>";',
         'const key = "{your-api-key}";',
-        'const url = "https://api.example.com/key=sk-1234567890abcdef1234567890abcdef12345678";',
-        'const url = "http://localhost:3000/api?key=sk-1234567890abcdef1234567890abcdef12345678";',
+        'const url = "https://api.example.com/key=sk-test1234567890abcdef1234567890abcdef12345678";',
+        'const url = "http://localhost:3000/api?key=sk-test1234567890abcdef1234567890abcdef12345678";',
         'const key = "";',
         'const key = "abc";'
       ];
@@ -199,8 +199,8 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
 
     test('should detect real-looking keys', () => {
       const realKeyCases = [
-        'const key = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";',
-        'const key = "AKIAIOSFODNN7EXAMPLE";'
+        'const key = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";',
+        'const key = "AKIATEST567890123456";'
       ];
 
       realKeyCases.forEach(code => {
@@ -242,7 +242,7 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
 
       testFilePaths.forEach(filePath => {
         // Use a realistic key that won't be filtered as placeholder
-        const code = 'const apiKey = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
+        const code = 'const apiKey = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
         const issues = ruleEngine.executeRules(code, 'javascript', filePath);
         
         assert.strictEqual(issues.length, 1, `Should detect issue in test file: ${filePath}`);
@@ -253,9 +253,9 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
 
     test('should whitelist obvious test values in test files', () => {
       const testCodes = [
-        'const testKey = "sk-test1234567890abcdef1234567890abcdef12345678";',
-        'const mockApiKey = "sk-mock1234567890abcdef1234567890abcdef12345678";',
-        'const fakeKey = "sk-fake1234567890abcdef1234567890abcdef12345678";',
+        'const testKey = "sk-testtest1234567890abcdef1234567890abcdef12345678";',
+        'const mockApiKey = "sk-mocktest1234567890abcdef1234567890abcdef12345678";',
+        'const fakeKey = "sk-faketest1234567890abcdef1234567890abcdef12345678";',
         'const key = "sk-short";' // Less than 20 chars
       ];
 
@@ -270,7 +270,7 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
       
       docFilePaths.forEach(filePath => {
         // Use a realistic key that won't be filtered as placeholder
-        const code = 'const apiKey = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
+        const code = 'const apiKey = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
         const issues = ruleEngine.executeRules(code, 'javascript', filePath);
         
         assert.strictEqual(issues.length, 1, `Should detect issue in doc file: ${filePath}`);
@@ -285,9 +285,9 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
 
       // Should whitelist keys with doc indicators
       const docIndicatorCodes = [
-        'const key = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z"; // example key',
-        'const key = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z"; // your key here',
-        'const key = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z"; // TODO: update'
+        'const key = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z"; // example key',
+        'const key = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z"; // your key here',
+        'const key = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z"; // TODO: update'
       ];
 
       docIndicatorCodes.forEach(code => {
@@ -307,7 +307,7 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
 
       exampleFilePaths.forEach(filePath => {
         // Even realistic keys should be whitelisted in example files
-        const code = 'const apiKey = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
+        const code = 'const apiKey = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
         const issues = ruleEngine.executeRules(code, 'javascript', filePath);
         assert.strictEqual(issues.length, 0, `Should whitelist completely in example file: ${filePath}`);
       });
@@ -336,7 +336,7 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
       });
 
       // Should reduce severity for real keys in config files
-      const realKeyCode = 'const apiKey = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
+      const realKeyCode = 'const apiKey = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";';
       const issues = ruleEngine.executeRules(realKeyCode, 'javascript', 'package.json');
       assert.strictEqual(issues.length, 1, 'Should detect real key in config');
       assert.strictEqual(issues[0].severity, IssueSeverity.WARNING, 'Should reduce severity');
@@ -347,10 +347,10 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
   suite('Edge Cases and Complex Scenarios', () => {
     test('should handle mixed content correctly', () => {
       const code = `
-        // This is an example key: sk-example1234567890abcdef1234567890abcdef12345678
+        // This is an example key: sk-exampletest1234567890abcdef1234567890abcdef12345678
         const configKey = process.env.API_KEY;
         const templateUrl = \`https://api.openai.com/v1/chat?key=\${apiKey}\`;
-        const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321"; // This should be detected
+        const realKey = "sk-projtest9876543210fedcba9876543210fedcba87654321"; // This should be detected
         const placeholderKey = "your-api-key-here";
       `;
       
@@ -383,12 +383,12 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
       const languageTests = [
         {
           language: 'python',
-          code: 'api_key = os.environ.get("OPENAI_API_KEY", "sk-default1234567890abcdef1234567890abcdef12345678")',
+          code: 'api_key = os.environ.get("OPENAI_API_KEY", "sk-defaulttest1234567890abcdef1234567890abcdef12345678")',
           shouldDetect: true
         },
         {
           language: 'ruby',
-          code: 'api_key = ENV["OPENAI_API_KEY"] || "sk-default1234567890abcdef1234567890abcdef12345678"',
+          code: 'api_key = ENV["OPENAI_API_KEY"] || "sk-defaulttest1234567890abcdef1234567890abcdef12345678"',
           shouldDetect: true
         }
       ];
@@ -407,7 +407,7 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
     test('should adjust confidence and tags based on file context', () => {
       // Test file should have lower confidence
       const testFileIssues = ruleEngine.executeRules(
-        'const key = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";',
+        'const key = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";',
         'javascript',
         'src/test/api.test.js'
       );
@@ -418,7 +418,7 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
 
       // Documentation file should have much lower confidence
       const docFileIssues = ruleEngine.executeRules(
-        'const key = "sk-proj1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";',
+        'const key = "sk-projtest1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z";',
         'javascript',
         'README.md'
       );
@@ -467,7 +467,7 @@ const realKey = "sk-proj9876543210fedcba9876543210fedcba87654321";`;
       testEngine.registerRule(ruleWithBadWhitelist);
       
       // Should not crash, should handle gracefully
-      const issues = testEngine.executeRules('const key = "sk-test1234567890abcdef1234567890abcdef12345678";', 'javascript');
+      const issues = testEngine.executeRules('const key = "sk-testtest1234567890abcdef1234567890abcdef12345678";', 'javascript');
       assert.strictEqual(issues.length, 1, 'Should still detect since whitelist failed');
     });
   });
