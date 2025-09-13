@@ -152,9 +152,7 @@ A: 所有的！无论是 ChatGPT、Claude、GitHub Copilot 还是其他 AI，只
 ## 💪 加入我们
 
 ### 遇到问题？
-- 📧 发邮件：support@vibeguard.com
-- 💬 加微信群：扫描下方二维码
-- 🐛 报告问题：[GitHub Issues](https://github.com/vibeguard/vibeguard/issues)
+- 🐛 报告问题：[GitHub Issues](https://github.com/vueadmin/VibeGuard/issues)
 
 ### 想要更多功能？
 告诉我们你在 AI 编程时遇到的坑，我们会加入检测！
