@@ -49,6 +49,7 @@ import { registerApiKeyRules } from './rules/definitions/api-keys';
 import { registerSqlDangerRules } from './rules/definitions/sql-rules';
 import { registerCodeInjectionRules } from './rules/definitions/code-injection-rules';
 import { registerFrameworkRiskRules } from './rules/definitions/framework-rules';
+import { registerConfigErrorRules } from './rules/definitions/config-rules';
 
 /**
  * Extension context and services
@@ -459,6 +460,10 @@ async function registerDetectionRules(ruleEngine: IRuleEngine): Promise<void> {
     // Register framework-specific risk detection rules (prevents framework-specific vulnerabilities)
     logInfo('注册框架风险检测规则...');
     registerFrameworkRiskRules(ruleEngine);
+    
+    // Register configuration error detection rules (prevents production misconfigurations)
+    logInfo('注册配置错误检测规则...');
+    registerConfigErrorRules(ruleEngine);
     
     // Get final statistics
     const stats = ruleEngine.getStatistics();
