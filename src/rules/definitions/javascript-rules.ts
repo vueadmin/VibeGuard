@@ -49,15 +49,16 @@ export const javascriptRules: Rule[] = [
     {
         code: 'JS004',
         severity: 'error',
-        message: '\u26a0\ufe0f \u5f02\u6b65\u9677\u9631\uff1aforEach \u4e2d\u7684 await \u4e0d\u4f1a\u7b49\u5f85',
+        message: '\u26a0\ufe0f \u5f02\u6b65\u9677\u9631\uff1aforEach \u4e2d\u7684 await \u4e0d\u4f1a\u7b49\u5f85\uff0c\u5c31\u50cf\u8ba9\u5458\u5de5\u5404\u81ea\u5e72\u6d3b\u4e0d\u7b49\u5f85\u5b8c\u6210',
         pattern: /\.forEach\s*\(\s*async/g,
         quickFix: {
             title: '\u4f7f\u7528 for...of \u6216 Promise.all',
-            replacement: 'for (const item of items)'
+            replacement: 'for (const item of items) {\n  await processItem(item);\n}'
         },
         metadata: {
             category: 'quality',
-            tags: ['async', 'common-mistake']
+            tags: ['async', 'common-mistake'],
+            docs: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of'
         }
     },
     {
@@ -157,15 +158,15 @@ export const javascriptRules: Rule[] = [
     {
         code: 'JS012',
         severity: 'warning',
-        message: '\u26a0\ufe0f \u672a\u58f0\u660e\u7684\u53d8\u91cf\u4f1a\u6210\u4e3a\u5168\u5c40\u53d8\u91cf',
-        pattern: /^\s*(?!var|let|const|function|class|import|export)[a-zA-Z_$][a-zA-Z0-9_$]*\s*=/gm,
+        message: '\u26a0\ufe0f \u672a\u58f0\u660e\u7684\u53d8\u91cf\u4f1a\u6210\u4e3a\u5168\u5c40\u53d8\u91cf\uff0c\u5c31\u50cf\u628a\u79c1\u4eba\u7269\u54c1\u653e\u5728\u516c\u5171\u573a\u6240',
+        pattern: /(?<!\.)(?<![\w$])([\w$]+)\s*=\s*(?!.*\b(?:var|let|const)\s+\1\b)/g,
         quickFix: {
             title: '\u6dfb\u52a0\u53d8\u91cf\u58f0\u660e',
-            replacement: 'let '
+            replacement: 'let $1 = '
         },
         metadata: {
             category: 'quality',
-            tags: ['scope', 'global']
+            tags: ['scope', 'global', 'strict-mode']
         }
     },
     {
@@ -200,6 +201,94 @@ export const javascriptRules: Rule[] = [
         metadata: {
             category: 'performance',
             tags: ['memory-leak', 'event-listener']
+        }
+    },
+    {
+        code: 'JS016',
+        severity: 'error',
+        message: '\ud83d\udd34 React \u5b89\u5168\u98ce\u9669\uff1adangerouslySetInnerHTML \u53ef\u80fd\u5bfc\u81f4 XSS \u653b\u51fb',
+        pattern: /dangerouslySetInnerHTML\s*=\s*\{/g,
+        quickFix: {
+            title: '\u4f7f\u7528\u5b89\u5168\u7684 HTML \u6e32\u67d3\u65b9\u6cd5',
+            replacement: '// \u8003\u8651\u4f7f\u7528 DOMPurify.sanitize() \u6216\u5176\u4ed6\u5b89\u5168\u65b9\u6cd5'
+        },
+        metadata: {
+            category: 'security',
+            tags: ['react', 'xss', 'dom'],
+            docs: 'https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html'
+        }
+    },
+    {
+        code: 'JS017',
+        severity: 'warning',
+        message: '\u26a0\ufe0f \u6b63\u5219\u8868\u8fbe\u5f0f\u53ef\u80fd\u5bfc\u81f4 ReDoS \u653b\u51fb\uff0c\u8ba9\u7f51\u7ad9\u5361\u6b7b',
+        pattern: /\/(.*\+)+.*\|.*(\*)+.*\//g,
+        quickFix: {
+            title: '\u4f18\u5316\u6b63\u5219\u8868\u8fbe\u5f0f',
+            replacement: '// \u907f\u514d\u5d4c\u5957\u91cf\u8bcd\u548c\u56de\u6eaf'
+        },
+        metadata: {
+            category: 'security',
+            tags: ['regex', 'dos', 'performance'],
+            docs: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS'
+        }
+    },
+    {
+        code: 'JS018',
+        severity: 'error',
+        message: '\ud83d\udd11 postMessage \u672a\u9a8c\u8bc1\u6765\u6e90\uff0c\u4efb\u4f55\u7f51\u7ad9\u90fd\u80fd\u53d1\u9001\u6d88\u606f',
+        pattern: /addEventListener\s*\(\s*['"]message['"]\s*,\s*(?:function\s*\([^)]*\)\s*\{|[^{]*=>\s*\{)(?![^}]*origin)/g,
+        quickFix: {
+            title: '\u6dfb\u52a0 origin \u9a8c\u8bc1',
+            replacement: 'if (event.origin !== "https://trusted-site.com") return;'
+        },
+        metadata: {
+            category: 'security',
+            tags: ['postMessage', 'cross-origin'],
+            docs: 'https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns'
+        }
+    },
+    {
+        code: 'JS019',
+        severity: 'error',
+        message: '\ud83d\udd12 localStorage \u5b58\u50a8\u654f\u611f\u4fe1\u606f\u4e0d\u5b89\u5168\uff0c\u5c31\u50cf\u628a\u5bc6\u7801\u8d34\u5728\u663e\u793a\u5668\u4e0a',
+        pattern: /localStorage\.setItem\s*\([^,]*(?:password|token|secret|key|credential)[^,)]*,/gi,
+        quickFix: {
+            title: '\u4e0d\u8981\u5728 localStorage \u5b58\u50a8\u654f\u611f\u4fe1\u606f',
+            replacement: '// \u8003\u8651\u4f7f\u7528 sessionStorage \u6216\u5185\u5b58\u5b58\u50a8'
+        },
+        metadata: {
+            category: 'security',
+            tags: ['storage', 'credentials'],
+            docs: 'https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#local-storage'
+        }
+    },
+    {
+        code: 'JS020',
+        severity: 'warning',
+        message: '\u26a0\ufe0f JSON.parse \u672a\u6355\u83b7\u5f02\u5e38\uff0c\u683c\u5f0f\u9519\u8bef\u4f1a\u8ba9\u7a0b\u5e8f\u5d29\u6e83',
+        pattern: /JSON\.parse\s*\([^)]+\)(?!\s*\)?\s*\.?\s*catch|\s*}\s*catch)/g,
+        quickFix: {
+            title: '\u6dfb\u52a0 try-catch \u5904\u7406',
+            replacement: 'try {\n  const data = JSON.parse(jsonString);\n} catch (e) {\n  console.error("Invalid JSON:", e);\n}'
+        },
+        metadata: {
+            category: 'quality',
+            tags: ['error-handling', 'json']
+        }
+    },
+    {
+        code: 'JS021',
+        severity: 'error',
+        message: '\ud83d\udd34 \u4e0d\u5b89\u5168\u7684\u52a8\u6001\u4ee3\u7801\u52a0\u8f7d\uff0c\u9ed1\u5ba2\u53ef\u4ee5\u6ce8\u5165\u6076\u610f\u811a\u672c',
+        pattern: /(?:script\.src|import\s*\()\s*[^=]*=\s*[`'"]\$\{|(?:script\.src|import\s*\()\s*[^=]*=\s*[^'"`]+\+/g,
+        quickFix: {
+            title: '\u4f7f\u7528\u9759\u6001 URL \u6216\u767d\u540d\u5355\u9a8c\u8bc1',
+            replacement: '// \u9a8c\u8bc1 URL \u662f\u5426\u5728\u5141\u8bb8\u5217\u8868\u4e2d'
+        },
+        metadata: {
+            category: 'security',
+            tags: ['code-injection', 'dynamic-import']
         }
     }
 ];
