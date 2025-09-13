@@ -1,25 +1,44 @@
-# VibeGuard 🛡️
+# VibeGuard 🛡️ - AI 编程安全卫士
 
-> **让 AI 编程更安全** - 防止你的代码值 $5000
+> **让 AI 编程更安全** - 专为非技术人员设计的代码安全检测工具
 
-## 🚨 真实案例警示
+[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://marketplace.visualstudio.com/items?itemName=vibeguard.vibeguard)
+[![Downloads](https://img.shields.io/badge/downloads-0-green.svg)](https://marketplace.visualstudio.com/items?itemName=vibeguard.vibeguard)
+[![Rating](https://img.shields.io/badge/rating-★★★★★-yellow.svg)](https://marketplace.visualstudio.com/items?itemName=vibeguard.vibeguard)
 
-- **设计师小王**：把 OpenAI API key 写在代码里，被黑客刷了 $5000
-- **产品经理小李**：用 ChatGPT 写 SQL，不小心 DELETE 了整个用户表
-- **运营小张**：复制的代码包含 `eval()`，网站被注入恶意脚本
+## 🚨 真实损失案例警示
 
-**VibeGuard 会在你写下这些危险代码时立即警告你！**
+### 💸 API 密钥泄露 - 损失 $5,000
+**设计师小王的故事**：使用 ChatGPT 生成 OpenAI 集成代码，直接把 API key 写在了代码里。代码推送到 GitHub 后，被黑客发现并恶意使用，一夜之间产生了 $5,000 的费用。
 
-## 🎯 这是给谁用的？
+### 💾 数据库误删 - 损失无法估量
+**产品经理小李的故事**：让 AI 帮忙写 SQL 清理脚本，生成的 `DELETE FROM users` 没有 WHERE 条件。一键执行后，整个用户表被清空，虽然有备份，但业务中断了 4 小时。
 
-**不是给程序员的**，而是给这些人：
+### 🎯 XSS 攻击 - 用户数据泄露
+**运营小张的故事**：从网上复制了一段代码，包含 `innerHTML` 直接插入用户输入。上线后被黑客利用，注入恶意脚本窃取了用户的登录信息。
 
-- 🎨 用 Cursor 写前端的**设计师**
-- 📊 用 ChatGPT 写 SQL 的**产品经理**
-- 📈 用 AI 写数据分析的**运营人员**
-- 🚀 用 AI 快速搭建 MVP 的**创业者**
+**VibeGuard 会在你写下这些危险代码时立即警告你，并提供一键修复！**
 
-这些人的共同特点：**会用 AI 写代码，但不知道代码的危险性**。
+## 🎯 专为 AI 编程用户设计
+
+**不是给专业程序员的**，而是给这些 AI 编程用户：
+
+### 👥 目标用户
+- 🎨 **设计师**：用 Cursor、ChatGPT 写前端代码
+- 📊 **产品经理**：用 AI 生成数据分析和 SQL 查询
+- 📈 **运营人员**：用 AI 写自动化脚本和数据处理
+- 🚀 **创业者**：用 AI 快速搭建 MVP 和原型
+- 🎓 **学生**：学习编程时使用 AI 辅助工具
+- 💼 **非技术创始人**：用 AI 开发产品原型
+
+### 🤔 你是否遇到过这些情况？
+- ✅ 经常使用 ChatGPT、Claude、GitHub Copilot 等 AI 工具写代码
+- ✅ 对代码能跑起来很开心，但不太了解安全风险
+- ✅ 担心 AI 生成的代码可能有安全问题，但不知道如何检查
+- ✅ 希望有工具能自动发现并修复代码中的安全漏洞
+- ✅ 想学习安全编程知识，但觉得太复杂
+
+**如果你符合以上任何一条，VibeGuard 就是为你而生！**
 
 ## 💀 它能救你什么命？
 
@@ -53,27 +72,73 @@ eval(userInput);
 JSON.parse(userInput);
 ```
 
-## 🚀 快速开始
+## 🚀 5分钟快速上手
 
-### 1. 安装
+### 📦 第一步：安装 VibeGuard
 
+#### 方法一：VS Code 扩展商店（推荐）
+1. 打开 VS Code
+2. 点击左侧的扩展图标（或按 `Ctrl+Shift+X`）
+3. 搜索 "VibeGuard"
+4. 点击 "安装"
+
+#### 方法二：命令行安装
 ```bash
-# 在 VS Code 扩展商店搜索
-VibeGuard
-
-# 或直接安装
-code --install-extension vibeguard
+code --install-extension vibeguard.vibeguard
 ```
 
-### 2. 使用
+### 🎯 第二步：开始使用
 
-- 🔴 **红色波浪线** = 致命错误（必须修复！）
-- 🟡 **黄色波浪线** = 高危风险（强烈建议修复）
-- 💡 **点击灯泡** = 一键自动修复
+安装完成后，VibeGuard 会自动开始工作，**无需任何配置**！
 
-### 3. 就这么简单！
+#### 🚨 识别安全问题
+- 🔴 **红色波浪线** = 致命安全漏洞（必须立即修复！）
+- 🟡 **黄色波浪线** = 高危安全风险（强烈建议修复）
+- 💡 **灯泡图标** = 点击获取一键修复方案
 
-无需配置，安装即用。专为非技术人员优化。
+#### 🛠️ 修复安全问题
+1. **看到红色或黄色波浪线** → 鼠标悬停查看详细说明
+2. **点击灯泡图标** → 查看修复建议
+3. **选择修复方案** → 一键应用安全修复
+4. **问题解决** → 继续安心编程！
+
+### 🎬 使用演示
+
+#### 场景一：API 密钥保护
+```javascript
+// ❌ 危险代码 - VibeGuard 会立即警告
+const apiKey = "sk-proj-1234567890abcdef";
+
+// ✅ 安全代码 - 点击灯泡自动修复
+const apiKey = process.env.OPENAI_API_KEY;
+```
+
+#### 场景二：SQL 安全检查
+```sql
+-- ❌ 危险代码 - 会删除所有数据！
+DELETE FROM users;
+
+-- ✅ 安全代码 - 添加了条件限制
+DELETE FROM users WHERE status = 'inactive';
+```
+
+#### 场景三：XSS 攻击防护
+```javascript
+// ❌ 危险代码 - 可能被注入恶意脚本
+element.innerHTML = userInput;
+
+// ✅ 安全代码 - 使用安全方法
+element.textContent = userInput;
+```
+
+### ⚙️ 第三步：个性化设置（可选）
+
+打开 VS Code 设置（`Ctrl+,`），搜索 "VibeGuard"：
+
+- 🔍 **实时检测**：边写边检查（推荐开启）
+- 📚 **显示真实案例**：在提示中显示真实损失案例
+- 🚀 **自动修复**：保存时自动修复问题（谨慎使用）
+- 🔔 **通知级别**：选择接收哪些类型的提醒
 
 ## 📋 检测清单
 

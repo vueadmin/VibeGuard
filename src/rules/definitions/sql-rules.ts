@@ -17,16 +17,16 @@ export const SQL_DELETE_NO_WHERE_RULE: DetectionRule = {
   category: SecurityCategory.SQL_DANGER,
   severity: IssueSeverity.ERROR,
   pattern: /DELETE\s+FROM\s+\w+\s*(?:;|$)/gim,
-  message: '💀 致命错误！DELETE 没有 WHERE 条件会删除整个表的所有数据！这可能导致数据永久丢失！',
+  message: '💀 数据库灾难警告！DELETE 没有 WHERE 条件！\n📊 真实案例：产品经理小李因此删除了整个用户表，损失惨重！\n🛡️ 紧急修复：点击灯泡添加安全条件',
   quickFix: {
-    title: '添加 WHERE 条件',
+    title: '🚨 立即添加 WHERE 条件防止数据丢失',
     replacement: (match: RegExpExecArray): string => {
       const statement = match[0].trim();
       // Remove semicolon if present
       const cleanStatement = statement.replace(/;$/, '');
-      return `${cleanStatement} WHERE id = ?;`;
+      return `${cleanStatement} WHERE id = ?; -- ⚠️ 请替换为具体的删除条件`;
     },
-    description: '添加 WHERE 条件来限制删除范围，防止意外删除所有数据'
+    description: '添加 WHERE 条件来精确指定要删除的数据，防止误删整个表。'
   },
   whitelist: [
     // Skip comments
@@ -52,16 +52,16 @@ export const SQL_UPDATE_NO_WHERE_RULE: DetectionRule = {
   category: SecurityCategory.SQL_DANGER,
   severity: IssueSeverity.ERROR,
   pattern: /UPDATE\s+\w+\s+SET\s+[^;WHERE]+(?:;|$)/gim,
-  message: '💀 致命错误！UPDATE 没有 WHERE 条件会修改表中的所有记录！这可能破坏整个数据集！',
+  message: '💀 数据破坏警告！UPDATE 没有 WHERE 条件！\n📈 真实风险：会修改表中所有记录，可能破坏整个业务数据！\n🔧 立即修复：点击灯泡添加精确条件',
   quickFix: {
-    title: '添加 WHERE 条件',
+    title: '🚨 立即添加 WHERE 条件保护数据',
     replacement: (match: RegExpExecArray): string => {
       const statement = match[0].trim();
       // Remove semicolon if present
       const cleanStatement = statement.replace(/;$/, '');
-      return `${cleanStatement} WHERE id = ?;`;
+      return `${cleanStatement} WHERE id = ?; -- ⚠️ 请替换为具体的更新条件`;
     },
-    description: '添加 WHERE 条件来限制更新范围，防止意外修改所有记录'
+    description: '添加 WHERE 条件来精确指定要更新的记录，防止误改所有数据。'
   },
   whitelist: [
     // Skip comments
@@ -87,13 +87,14 @@ export const SQL_DROP_TABLE_RULE: DetectionRule = {
   category: SecurityCategory.SQL_DANGER,
   severity: IssueSeverity.ERROR,
   pattern: /DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?\w+/gim,
-  message: '💀 极度危险！DROP TABLE 会永久删除整个表和所有数据！请确认这是你真正想要的操作！',
+  message: '💀💀💀 毁灭性操作！DROP TABLE 会永久删除整个表！\n⚠️ 真实后果：表结构和所有数据将无法恢复！\n🛡️ 安全提醒：点击灯泡添加备份检查',
   quickFix: {
-    title: '添加备份提醒',
+    title: '🚨 添加安全备份提醒',
     replacement: (match: RegExpExecArray): string => {
-      return `-- 警告：请先备份数据！\n-- BACKUP TABLE ${match[0].split(/\s+/).pop()} TO 'backup_location';\n${match[0]}`;
+      const tableName = match[0].split(/\s+/).pop();
+      return `-- ⚠️ 危险操作警告：这将永久删除表 ${tableName}！\n-- 🛡️ 安全检查：请确保已完成数据备份！\n-- 📋 备份命令：BACKUP TABLE ${tableName} TO 'backup_location';\n-- 🔓 确认无误后取消下面的注释：\n-- ${match[0]}`;
     },
-    description: '在 DROP TABLE 前添加备份提醒注释'
+    description: '将危险的 DROP TABLE 操作注释掉，并添加详细的安全检查提醒。'
   },
   whitelist: [
     // Skip comments
@@ -120,13 +121,14 @@ export const SQL_DROP_DATABASE_RULE: DetectionRule = {
   category: SecurityCategory.SQL_DANGER,
   severity: IssueSeverity.ERROR,
   pattern: /DROP\s+(?:DATABASE|SCHEMA)\s+(?:IF\s+EXISTS\s+)?\w+/gim,
-  message: '💀💀💀 毁灭性操作！DROP DATABASE 会删除整个数据库！这是不可逆的灾难性操作！',
+  message: '💀💀💀 终极毁灭操作！DROP DATABASE 会删除整个数据库！\n🔥 真实后果：所有表、数据、用户、权限将全部消失！\n🛡️ 紧急制动：点击灯泡添加多重安全检查',
   quickFix: {
-    title: '添加安全检查',
+    title: '🚨 添加多重安全检查和备份提醒',
     replacement: (match: RegExpExecArray): string => {
-      return `-- 危险操作警告：这将删除整个数据库！\n-- 请确保已经完成完整备份！\n-- 取消注释下面的行来执行：\n-- ${match[0]}`;
+      const dbName = match[0].split(/\s+/).pop();
+      return `-- 🚨🚨🚨 终极危险操作警告 🚨🚨🚨\n-- 这将删除整个数据库 ${dbName} 及其所有内容！\n-- \n-- ✅ 安全检查清单：\n-- [ ] 已完成完整数据库备份\n-- [ ] 已通知相关团队成员\n-- [ ] 已确认这是必要操作\n-- [ ] 已准备好恢复计划\n-- \n-- 🔓 确认所有检查项后，取消下面的注释：\n-- ${match[0]}`;
     },
-    description: '将 DROP DATABASE 语句注释掉并添加安全警告'
+    description: '将极度危险的 DROP DATABASE 操作注释掉，并添加详细的安全检查清单。'
   },
   whitelist: [
     // Skip comments

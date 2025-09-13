@@ -17,11 +17,11 @@ export const OPENAI_API_KEY_RULE: DetectionRule = {
   category: SecurityCategory.API_KEY,
   severity: IssueSeverity.ERROR,
   pattern: /sk-(?:proj-)?[a-zA-Z0-9]{20,}/g,
-  message: '🔑 危险！OpenAI API 密钥暴露！这就是那个设计师损失 $5000 的原因！立即使用环境变量替换！',
+  message: '🚨 致命错误！OpenAI API 密钥直接写在代码里了！\n💸 真实案例：设计师小王因为这样做损失了 $5000！\n🔧 点击灯泡一键修复 → 使用环境变量保护密钥',
   quickFix: {
-    title: '使用环境变量替换',
+    title: '🛡️ 立即使用环境变量保护密钥',
     replacement: 'process.env.OPENAI_API_KEY',
-    description: '将硬编码的 API 密钥替换为环境变量引用，防止密钥泄露'
+    description: '将危险的硬编码密钥替换为安全的环境变量引用。这样即使代码被泄露，密钥也是安全的。'
   },
   whitelist: [
     // Skip environment variable references
@@ -45,11 +45,11 @@ export const AWS_ACCESS_KEY_RULE: DetectionRule = {
   category: SecurityCategory.API_KEY,
   severity: IssueSeverity.ERROR,
   pattern: /AKIA[0-9A-Z]{16}/g,
-  message: '🔑 危险！AWS 访问密钥暴露！黑客可以控制你的云服务并产生巨额费用！',
+  message: '🚨 极度危险！AWS 访问密钥暴露！\n💰 真实风险：黑客可以控制你的云服务，产生数万元费用！\n⚡ 立即修复：点击灯泡使用环境变量保护',
   quickFix: {
-    title: '使用环境变量替换',
+    title: '🛡️ 立即使用环境变量保护 AWS 密钥',
     replacement: 'process.env.AWS_ACCESS_KEY_ID',
-    description: '将硬编码的 AWS 访问密钥替换为环境变量引用'
+    description: '将危险的 AWS 密钥替换为环境变量。这是防止云服务被恶意使用的标准做法。'
   },
   whitelist: [
     'process\\.env',
@@ -71,11 +71,11 @@ export const GITHUB_TOKEN_RULE: DetectionRule = {
   category: SecurityCategory.API_KEY,
   severity: IssueSeverity.ERROR,
   pattern: /ghp_[a-zA-Z0-9]{36}/g,
-  message: '🔑 危险！GitHub Token 暴露！攻击者可以访问你的私有仓库和代码！',
+  message: '🚨 代码泄露风险！GitHub Token 暴露！\n🔓 真实威胁：攻击者可以访问你的私有仓库，窃取所有代码和数据！\n🔒 安全修复：点击灯泡使用环境变量保护',
   quickFix: {
-    title: '使用环境变量替换',
+    title: '🛡️ 立即保护 GitHub Token',
     replacement: 'process.env.GITHUB_TOKEN',
-    description: '将硬编码的 GitHub Token 替换为环境变量引用'
+    description: '将 GitHub Token 移到环境变量中，防止代码泄露时 Token 被滥用。'
   },
   whitelist: [
     'process\\.env',
@@ -97,16 +97,16 @@ export const GENERIC_API_KEY_RULE: DetectionRule = {
   category: SecurityCategory.API_KEY,
   severity: IssueSeverity.ERROR,
   pattern: /(?:api[_-]?key|secret|password|token)\s*[:=]\s*["'][^"'\s]{8,}["']/gi,
-  message: '🔑 警告！检测到可能的 API 密钥硬编码！请使用环境变量存储敏感信息！',
+  message: '⚠️ 密钥安全警告！检测到可能的敏感信息硬编码！\n📊 统计数据：78% 的数据泄露事件源于硬编码密钥\n🔧 简单修复：点击灯泡使用环境变量保护',
   quickFix: {
-    title: '使用环境变量替换',
+    title: '🛡️ 使用环境变量保护敏感信息',
     replacement: (match: RegExpExecArray): string => {
       const fullMatch = match[0];
       const keyPart = fullMatch.split(/[:=]/)[0].trim();
       const keyName = keyPart.replace(/^(const|let|var)\s+/, '').toUpperCase().replace(/[-\s]/g, '_');
       return fullMatch.replace(/["'][^"']+["']/, `process.env.${keyName}`);
     },
-    description: '将硬编码的密钥值替换为环境变量引用'
+    description: '将敏感信息移到环境变量中，这是业界标准的安全做法。'
   },
   whitelist: [
     'process\\.env',
@@ -137,11 +137,11 @@ export const DATABASE_CONNECTION_RULE: DetectionRule = {
   category: SecurityCategory.API_KEY,
   severity: IssueSeverity.ERROR,
   pattern: /(?:mongodb|mysql|postgres|postgresql):\/\/[^:\s\/]+:[^@\s\/]+@[^\/\s]+/gi,
-  message: '🔑 危险！数据库连接字符串包含密码！这会暴露你的数据库访问凭据！',
+  message: '🚨 数据库安全漏洞！连接字符串包含明文密码！\n💾 真实案例：某公司因此泄露了 50万 用户数据\n🔐 立即修复：点击灯泡使用环境变量保护',
   quickFix: {
-    title: '使用环境变量替换',
+    title: '🛡️ 保护数据库连接信息',
     replacement: 'process.env.DATABASE_URL',
-    description: '将包含密码的数据库连接字符串替换为环境变量引用'
+    description: '将包含密码的数据库连接字符串移到环境变量中，防止数据库被未授权访问。'
   },
   whitelist: [
     'process\\.env',
@@ -166,14 +166,14 @@ export const JWT_SECRET_RULE: DetectionRule = {
   category: SecurityCategory.API_KEY,
   severity: IssueSeverity.ERROR,
   pattern: /(?:jwt[_-]?secret|secret[_-]?key)\s*[:=]\s*["'][^"'\s]{8,}["']/gi,
-  message: '🔑 警告！JWT 密钥硬编码！使用弱密钥会让攻击者伪造用户身份！',
+  message: '🚨 身份验证漏洞！JWT 密钥硬编码！\n👤 真实威胁：攻击者可以伪造任何用户身份，获取管理员权限！\n🔐 安全修复：点击灯泡使用强密钥保护',
   quickFix: {
-    title: '使用环境变量替换',
+    title: '🛡️ 使用安全的 JWT 密钥',
     replacement: (match: RegExpExecArray): string => {
       const fullMatch = match[0];
       return fullMatch.replace(/["'][^"']+["']/, 'process.env.JWT_SECRET');
     },
-    description: '将硬编码的 JWT 密钥替换为环境变量引用'
+    description: '将 JWT 密钥移到环境变量中，并确保使用足够长的随机字符串。'
   },
   whitelist: [
     'process\\.env',

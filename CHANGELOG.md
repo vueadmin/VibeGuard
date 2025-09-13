@@ -1,9 +1,73 @@
-# Change Log
+# VibeGuard 更新日志 📝
 
-All notable changes to the "vibeguard-kiro" extension will be documented in this file.
+所有重要的更新都会记录在这个文件中。
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.0.1] - 2024-12-13
 
-## [Unreleased]
+### 🎉 首次发布
 
-- Initial release
+#### ✨ 新功能
+
+**核心安全检测**
+- 🔑 **API 密钥保护**: 检测 OpenAI、AWS、GitHub 等平台的硬编码密钥
+- 💾 **SQL 安全检查**: 防止危险的 DELETE、UPDATE、DROP 操作
+- 💻 **代码注入防护**: 检测 eval()、innerHTML、命令注入等风险
+- ⚛️ **框架特定检测**: 支持 React、Vue、Angular 安全检查
+- ⚙️ **配置错误检测**: 发现生产环境配置问题
+
+**用户体验优化**
+- 🚨 **智能错误提示**: 用通俗易懂的中文解释安全风险
+- 💸 **真实案例警示**: 在错误信息中展示真实损失案例
+- 🛠️ **一键修复功能**: 提供多种安全修复方案
+- 🚀 **批量修复操作**: 支持一次修复多个安全问题
+- 📊 **安全检测报告**: 生成详细的项目安全报告
+
+**命令和功能**
+- 🔍 **检查当前文件的安全问题**: 手动触发单文件分析
+- 🛡️ **扫描整个项目的安全风险**: 全项目安全扫描
+- 🚀 **一键修复所有安全问题**: 批量应用安全修复
+- 📊 **查看安全检测报告**: 生成详细的安全分析报告
+- 📚 **学习安全编程知识**: 访问用户指南和最佳实践
+
+#### 🎯 专为 AI 编程用户设计
+
+**目标用户**
+- 🎨 使用 AI 工具的设计师
+- 📊 用 ChatGPT 写 SQL 的产品经理
+- 📈 用 AI 写脚本的运营人员
+- 🚀 用 AI 搭建 MVP 的创业者
+- 🎓 学习编程的学生
+
+#### 🛡️ 安全检测规则
+
+**API 密钥检测 (6个规则)**
+- OpenAI API 密钥、AWS 访问密钥、GitHub Token 等
+
+**SQL 危险操作 (6个规则)**
+- DELETE/UPDATE 无条件、DROP 操作等
+
+**代码注入防护 (7个规则)**
+- eval()、innerHTML、命令注入等
+
+**框架特定风险 (7个规则)**
+- React、Vue、Angular 安全检查
+
+**配置错误检测 (7个规则)**
+- 生产环境配置问题
+
+#### 📚 文档和指南
+
+- 📖 **用户指南**: 详细的使用说明和最佳实践
+- 🏆 **最佳实践**: 安全编程规范和团队协作指南
+- 🎯 **真实案例**: 基于实际损失事件的学习材料
+
+---
+
+## 🆘 需要帮助？
+
+- 📧 **技术支持**: help@vibeguard.dev
+- 💬 **社区讨论**: [Discord 社区](https://discord.gg/vibeguard)
+- 🐛 **问题反馈**: [GitHub Issues](https://github.com/vibeguard/vibeguard/issues)
+- 📚 **在线文档**: [vibeguard.dev/docs](https://vibeguard.dev/docs)
+
+**记住**: 最贵的代码错误，往往是最简单的那一行。让 VibeGuard 帮你避免下一个 $5000 的损失！ 🛡️

@@ -357,11 +357,268 @@ function registerCommands(context: vscode.ExtensionContext): void {
     }
   );
 
+  // Fix all issues command - applies all available quick fixes
+  const fixAllIssuesCommand = vscode.commands.registerCommand(
+    'vibeguard.fixAllIssues',
+    async () => {
+      try {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor) {
+          showInfoMessage('请先打开一个文件');
+          return;
+        }
+
+        if (!services?.diagnosticCollection || !services?.quickFixProvider) {
+          showErrorMessage('修复服务未初始化');
+          return;
+        }
+
+        // Get all diagnostics for the current document
+        const diagnostics = services.diagnosticCollection.get(activeEditor.document.uri);
+        if (!diagnostics || diagnostics.length === 0) {
+          showInfoMessage('当前文件没有发现安全问题 ✅');
+          return;
+        }
+
+        const vibeguardDiagnostics = diagnostics.filter(d => d.source === 'VibeGuard');
+        if (vibeguardDiagnostics.length === 0) {
+          showInfoMessage('当前文件没有 VibeGuard 检测到的问题');
+          return;
+        }
+
+        // Show confirmation dialog
+        const choice = await vscode.window.showWarningMessage(
+          `发现 ${vibeguardDiagnostics.length} 个安全问题，是否一键修复？`,
+          { modal: true },
+          '🚀 立即修复',
+          '📋 查看详情',
+          '❌ 取消'
+        );
+
+        if (choice === '🚀 立即修复') {
+          showInfoMessage('正在修复所有安全问题...');
+          
+          // Create a context for code actions
+          const context: vscode.CodeActionContext = {
+            diagnostics: vibeguardDiagnostics,
+            only: [vscode.CodeActionKind.SourceFixAll],
+            triggerKind: vscode.CodeActionTriggerKind.Invoke
+          };
+
+          // Get fix all action
+          const actions = await services.quickFixProvider.provideCodeActions(
+            activeEditor.document,
+            new vscode.Range(0, 0, activeEditor.document.lineCount, 0),
+            context,
+            new vscode.CancellationTokenSource().token
+          );
+
+          const fixAllAction = actions?.find(action => 
+            action.kind?.contains(vscode.CodeActionKind.SourceFixAll)
+          );
+
+          if (fixAllAction && fixAllAction.edit) {
+            await vscode.workspace.applyEdit(fixAllAction.edit);
+            showInfoMessage(`✅ 成功修复 ${vibeguardDiagnostics.length} 个安全问题！`);
+            logInfo(`批量修复完成 - 修复了 ${vibeguardDiagnostics.length} 个问题`);
+          } else {
+            showInfoMessage('部分问题需要手动修复，请点击代码中的灯泡图标');
+          }
+        } else if (choice === '📋 查看详情') {
+          // Show problems panel
+          vscode.commands.executeCommand('workbench.panel.markers.view.focus');
+        }
+
+      } catch (error) {
+        logError(error as Error, '批量修复失败');
+        showErrorMessage('修复过程中发生错误，请手动修复或查看开发者控制台');
+      }
+    }
+  );
+
+  // Show security report command
+  const showSecurityReportCommand = vscode.commands.registerCommand(
+    'vibeguard.showSecurityReport',
+    async () => {
+      try {
+        if (!services?.diagnosticCollection) {
+          showErrorMessage('报告服务未初始化');
+          return;
+        }
+
+        // Collect all diagnostics from all documents
+        let totalIssues = 0;
+        const issuesByCategory: Record<string, number> = {};
+        const issuesBySeverity: Record<string, number> = {};
+        const fileStats: Array<{ file: string; issues: number }> = [];
+
+        // Iterate through all documents with diagnostics
+        services.diagnosticCollection.forEach((uri, diagnostics) => {
+          const vibeguardDiagnostics = diagnostics.filter(d => d.source === 'VibeGuard');
+          if (vibeguardDiagnostics.length > 0) {
+            totalIssues += vibeguardDiagnostics.length;
+            fileStats.push({
+              file: vscode.workspace.asRelativePath(uri),
+              issues: vibeguardDiagnostics.length
+            });
+
+            // Categorize issues
+            vibeguardDiagnostics.forEach(diagnostic => {
+              const code = diagnostic.code?.toString() || 'unknown';
+              const category = code.split('_')[0];
+              issuesByCategory[category] = (issuesByCategory[category] || 0) + 1;
+
+              const severity = diagnostic.severity === vscode.DiagnosticSeverity.Error ? 'error' : 'warning';
+              issuesBySeverity[severity] = (issuesBySeverity[severity] || 0) + 1;
+            });
+          }
+        });
+
+        // Generate report content
+        const reportLines = [
+          '# VibeGuard 安全检测报告 🛡️',
+          '',
+          `**生成时间**: ${new Date().toLocaleString('zh-CN')}`,
+          '',
+          '## 📊 总体统计',
+          '',
+          `- **总问题数**: ${totalIssues}`,
+          `- **受影响文件**: ${fileStats.length}`,
+          `- **错误级别**: ${issuesBySeverity.error || 0}`,
+          `- **警告级别**: ${issuesBySeverity.warning || 0}`,
+          '',
+          '## 🏷️ 问题分类',
+          ''
+        ];
+
+        // Add category breakdown
+        Object.entries(issuesByCategory).forEach(([category, count]) => {
+          const categoryNames: Record<string, string> = {
+            'API': '🔑 API 密钥安全',
+            'SQL': '💾 SQL 危险操作',
+            'CODE': '💻 代码注入风险',
+            'FRAMEWORK': '⚛️ 框架特定风险',
+            'CONFIG': '⚙️ 配置错误'
+          };
+          const categoryName = categoryNames[category] || category;
+          reportLines.push(`- **${categoryName}**: ${count} 个问题`);
+        });
+
+        reportLines.push('', '## 📁 文件详情', '');
+
+        // Add file breakdown
+        fileStats
+          .sort((a, b) => b.issues - a.issues)
+          .forEach(stat => {
+            reportLines.push(`- \`${stat.file}\`: ${stat.issues} 个问题`);
+          });
+
+        if (totalIssues === 0) {
+          reportLines.push('', '🎉 **恭喜！没有发现安全问题，代码很安全！**');
+        } else {
+          reportLines.push(
+            '',
+            '## 🚀 建议操作',
+            '',
+            '1. 点击代码中的 💡 灯泡图标查看具体修复建议',
+            '2. 使用 `Ctrl+Shift+P` → "VibeGuard: 一键修复所有安全问题"',
+            '3. 查看 [安全最佳实践](https://vibeguard.dev/docs) 了解更多',
+            '',
+            '---',
+            '',
+            '💡 **提示**: 定期运行安全检测，保护代码免受安全威胁！'
+          );
+        }
+
+        // Create and show report document
+        const reportContent = reportLines.join('\n');
+        const doc = await vscode.workspace.openTextDocument({
+          content: reportContent,
+          language: 'markdown'
+        });
+
+        await vscode.window.showTextDocument(doc, {
+          preview: true,
+          viewColumn: vscode.ViewColumn.Beside
+        });
+
+        logInfo(`安全报告已生成 - 总问题: ${totalIssues}, 文件: ${fileStats.length}`);
+
+      } catch (error) {
+        logError(error as Error, '生成安全报告失败');
+        showErrorMessage('生成报告时发生错误，请查看开发者控制台了解详情');
+      }
+    }
+  );
+
+  // Learn security command
+  const learnSecurityCommand = vscode.commands.registerCommand(
+    'vibeguard.learnSecurity',
+    async () => {
+      try {
+        const choice = await vscode.window.showInformationMessage(
+          '选择学习内容：',
+          '📚 用户指南',
+          '🏆 最佳实践',
+          '🌐 在线文档',
+          '💬 社区讨论'
+        );
+
+        switch (choice) {
+          case '📚 用户指南':
+            // Open user guide
+            const userGuideUri = vscode.Uri.joinPath(
+              vscode.extensions.getExtension('vibeguard.vibeguard')?.extensionUri || vscode.Uri.file(''),
+              'docs',
+              'USER_GUIDE.md'
+            );
+            try {
+              const doc = await vscode.workspace.openTextDocument(userGuideUri);
+              await vscode.window.showTextDocument(doc);
+            } catch {
+              vscode.env.openExternal(vscode.Uri.parse('https://vibeguard.dev/docs/user-guide'));
+            }
+            break;
+
+          case '🏆 最佳实践':
+            // Open best practices
+            const bestPracticesUri = vscode.Uri.joinPath(
+              vscode.extensions.getExtension('vibeguard.vibeguard')?.extensionUri || vscode.Uri.file(''),
+              'docs',
+              'BEST_PRACTICES.md'
+            );
+            try {
+              const doc = await vscode.workspace.openTextDocument(bestPracticesUri);
+              await vscode.window.showTextDocument(doc);
+            } catch {
+              vscode.env.openExternal(vscode.Uri.parse('https://vibeguard.dev/docs/best-practices'));
+            }
+            break;
+
+          case '🌐 在线文档':
+            vscode.env.openExternal(vscode.Uri.parse('https://vibeguard.dev/docs'));
+            break;
+
+          case '💬 社区讨论':
+            vscode.env.openExternal(vscode.Uri.parse('https://discord.gg/vibeguard'));
+            break;
+        }
+
+      } catch (error) {
+        logError(error as Error, '打开学习资源失败');
+        showErrorMessage('打开学习资源时发生错误');
+      }
+    }
+  );
+
     // Register commands with context
     context.subscriptions.push(analyzeCurrentFileCommand);
     context.subscriptions.push(analyzeWorkspaceCommand);
+    context.subscriptions.push(fixAllIssuesCommand);
+    context.subscriptions.push(showSecurityReportCommand);
+    context.subscriptions.push(learnSecurityCommand);
 
-    logInfo('命令注册完成');
+    logInfo('所有命令注册完成');
   } catch (error) {
     // Handle command registration errors (e.g., duplicate registration in tests)
     if (error instanceof Error && error.message.includes('already exists')) {

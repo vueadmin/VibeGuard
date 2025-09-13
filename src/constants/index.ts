@@ -99,6 +99,9 @@ export const SUCCESS_MESSAGES = {
 export const COMMANDS = {
   ANALYZE_CURRENT_FILE: 'vibeguard.analyzeCurrentFile',
   ANALYZE_WORKSPACE: 'vibeguard.analyzeWorkspace',
+  FIX_ALL_ISSUES: 'vibeguard.fixAllIssues',
+  SHOW_SECURITY_REPORT: 'vibeguard.showSecurityReport',
+  LEARN_SECURITY: 'vibeguard.learnSecurity',
   APPLY_QUICK_FIX: 'vibeguard.applyQuickFix',
   SHOW_SETTINGS: 'vibeguard.showSettings'
 } as const;

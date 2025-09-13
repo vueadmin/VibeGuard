@@ -17,13 +17,13 @@ export const EVAL_USAGE_RULE: DetectionRule = {
   category: SecurityCategory.CODE_INJECTION,
   severity: IssueSeverity.ERROR,
   pattern: /\beval\s*\(/gi,
-  message: '💀 极度危险！eval() 函数可以执行任意代码！黑客可以通过它完全控制你的应用！',
+  message: '💀 代码注入漏洞！eval() 是最危险的函数！\n🎯 真实威胁：黑客可以通过它执行任意代码，完全控制你的应用！\n🛡️ 安全修复：点击灯泡使用安全替代方案',
   quickFix: {
-    title: '使用安全替代方案',
+    title: '🚨 立即替换为安全方案',
     replacement: (match: RegExpExecArray): string => {
-      return `// 危险：不要使用 eval()！\n// 安全替代：JSON.parse() 用于解析 JSON，Function() 用于动态函数\n// ${match[0]}`;
+      return `// 🚨 危险函数已注释：eval() 存在严重安全风险！\n// 🛡️ 安全替代方案：\n//   - 解析 JSON：使用 JSON.parse()\n//   - 动态函数：使用 new Function()\n//   - 计算表达式：使用专门的表达式解析库\n// ${match[0]}`;
     },
-    description: '将 eval() 替换为安全的替代方案，如 JSON.parse() 或 Function() 构造器'
+    description: '将极度危险的 eval() 函数替换为安全的替代方案，防止代码注入攻击。'
   },
   whitelist: [
     // Skip comments
@@ -49,15 +49,15 @@ export const INNERHTML_ASSIGNMENT_RULE: DetectionRule = {
   category: SecurityCategory.CODE_INJECTION,
   severity: IssueSeverity.ERROR,
   pattern: /\.innerHTML\s*=\s*[^;]+/gi,
-  message: '⚠️ XSS 风险！直接设置 innerHTML 可能导致跨站脚本攻击！用户输入会被当作代码执行！',
+  message: '⚠️ XSS 攻击风险！直接设置 innerHTML 很危险！\n🎯 真实威胁：恶意用户可以注入脚本，窃取其他用户的登录信息！\n🛡️ 安全修复：点击灯泡使用安全方法',
   quickFix: {
-    title: '使用安全的 textContent',
+    title: '🛡️ 使用安全的内容设置方法',
     replacement: (match: RegExpExecArray): string => {
       const assignment = match[0];
       const safePart = assignment.replace(/\.innerHTML\s*=/, '.textContent =');
-      return `// 安全替代：使用 textContent 或 DOMPurify.sanitize()\n${safePart}`;
+      return `// 🛡️ 安全替代方案（选择其一）：\n// 1. 纯文本内容：${safePart}\n// 2. 清理后的 HTML：element.innerHTML = DOMPurify.sanitize(content)\n// 🚨 原始代码已注释：${assignment}`;
     },
-    description: '使用 textContent 替代 innerHTML，或使用 DOMPurify 等库进行内容清理'
+    description: '使用 textContent 显示纯文本，或使用 DOMPurify 清理 HTML 内容，防止 XSS 攻击。'
   },
   whitelist: [
     // Skip comments
