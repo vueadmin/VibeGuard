@@ -237,7 +237,7 @@ export interface IDocumentMonitor {
   /** Stop monitoring documents */
   stopMonitoring(): void;
   /** Handle document change events */
-  onDocumentChange(document: vscode.TextDocument): void;
+  onDocumentChange(event: vscode.TextDocumentChangeEvent): void;
   /** Handle document open events */
   onDocumentOpen(document: vscode.TextDocument): void;
 }
