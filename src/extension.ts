@@ -48,6 +48,7 @@ import { QuickFixProvider } from './quickfix/QuickFixProvider';
 import { registerApiKeyRules } from './rules/definitions/api-keys';
 import { registerSqlDangerRules } from './rules/definitions/sql-rules';
 import { registerCodeInjectionRules } from './rules/definitions/code-injection-rules';
+import { registerFrameworkRiskRules } from './rules/definitions/framework-rules';
 
 /**
  * Extension context and services
@@ -454,6 +455,10 @@ async function registerDetectionRules(ruleEngine: IRuleEngine): Promise<void> {
     // Register code injection detection rules (prevents XSS and command injection)
     logInfo('注册代码注入检测规则...');
     registerCodeInjectionRules(ruleEngine);
+    
+    // Register framework-specific risk detection rules (prevents framework-specific vulnerabilities)
+    logInfo('注册框架风险检测规则...');
+    registerFrameworkRiskRules(ruleEngine);
     
     // Get final statistics
     const stats = ruleEngine.getStatistics();

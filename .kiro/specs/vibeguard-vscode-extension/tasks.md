@@ -155,8 +155,8 @@
   - 测试快速修复功能
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 10. 实现框架特定风险检测
-- [ ] 10.1 创建框架风险规则定义
+- [x] 10. 实现框架特定风险检测
+- [x] 10.1 创建框架风险规则定义
 
   - 创建 src/rules/definitions/framework-rules.ts 规则定义文件
   - 实现 React dangerouslySetInnerHTML 检测
@@ -167,7 +167,7 @@
   - 更新扩展入口点以注册新规则
   - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 10.2 编写框架风险检测测试
+- [x] 10.2 编写框架风险检测测试
 
   - 创建 src/test/rules/framework-rules.test.ts 测试文件
   - 测试 React 和 Vue 特定风险检测
