@@ -55,8 +55,8 @@
   - 测试快速修复建议生成
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 5. 实现诊断管理和显示
-- [ ] 5.1 创建诊断管理器
+- [x] 5. 实现诊断管理和显示
+- [x] 5.1 创建诊断管理器
 
   - 创建 src/diagnostics/DiagnosticManager.ts 文件
   - 实现 DiagnosticManager 类，处理 VSCode 诊断 API
@@ -65,7 +65,7 @@
   - 添加中文错误信息显示，避免技术术语
   - _Requirements: 4.3, 1.5, 2.4_
 
-- [ ] 5.2 编写诊断管理器测试
+- [x] 5.2 编写诊断管理器测试
 
   - 创建 src/test/diagnostics/DiagnosticManager.test.ts 测试文件
   - 测试诊断信息的创建和更新
